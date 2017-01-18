@@ -1,0 +1,14 @@
+[package]
+name = "cid"
+version = "0.1.0"
+description = "CID in rust"
+homepage = "https://github.com/multiformats/rust-cid"
+authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
+
+keywords = ["ipdl", "ipfs", "hash", "multihash"]
+
+license = "MIT"
+
+readme = "README.md"
+
+[dependencies]
