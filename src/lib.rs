@@ -101,10 +101,12 @@ impl<'a> TryFrom<&'a str> for Cid {
             return Err(Error::InputTooShort);
         }
 
+        let mut data = data.to_string();
+
         if data.len() == 46 && &data[0..2] == "Qm" {
-            // TODO: add the mbase codec and send to multibase
-            return Err(Error::Fail);
+            data = multibase::Base::Base58btc.code().to_string() + &data;
         }
+
         println!("decoding {:?}", data);
         multibase::decode(data)
             .map_err(|_| Error::ParsingError)
@@ -160,7 +162,10 @@ impl Cid {
     fn to_string_v0(&self, f: &mut fmt::Formatter) -> fmt::Result {
         multibase::encode(multibase::Base::Base58btc, self.hash.as_slice())
             .map_err(|_| fmt::Error {})
-            .and_then(|enc| f.write_str(&enc))
+            .and_then(|enc| {
+                // Drop the first character as v0 does not know                 // about multibase
+                f.write_str(&enc[1..])
+            })
     }
 
     fn to_string_v1(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -196,7 +201,7 @@ impl Cid {
 
 #[cfg(test)]
 mod tests {
-    use ::{Cid, Codec};
+    use ::{Cid, Codec, Error};
     use try_from::TryFrom;
     use multihash;
 
@@ -216,5 +221,19 @@ mod tests {
         let out2 = Cid::try_from(&s[..]).unwrap();
         println!("second {:?} {:?} {:?}", cid, out2, &s);
         assert_eq!(cid, out2);
+    }
+
+    #[test]
+    fn empty_string() {
+        assert_eq!(Cid::try_from(""), Err(Error::InputTooShort));
+    }
+
+    #[test]
+    fn v0_handling() {
+        let old = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
+        let cid = Cid::try_from(old).unwrap();
+
+        assert_eq!(cid.version, 0);
+        assert_eq!(cid.to_string(), old);
     }
 }
