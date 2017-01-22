@@ -3,12 +3,13 @@
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 
 extern crate multihash;
+extern crate multibase;
 extern crate try_from;
 extern crate varmint;
 
-use multihash::Multihash;
 use try_from::TryFrom;
 use varmint::{WriteVarInt, ReadVarInt};
+use std::fmt;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Codec {
@@ -61,10 +62,10 @@ impl Codec {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Cid<'a> {
+pub struct Cid {
     version: u64,
     codec: Codec,
-    hash: &'a [u8],
+    hash: Vec<u8>,
 }
 
 /// Error types
@@ -72,39 +73,103 @@ pub struct Cid<'a> {
 pub enum Error {
     Fail,
     UnkownCodec,
+    InputTooShort,
+    ParsingError,
 }
 
-impl<'a> TryFrom<&'a [u8]> for Cid<'a> {
+impl TryFrom<Vec<u8>> for Cid {
     type Err = Error;
 
-    fn try_from(data: &'a [u8]) -> Result<Self, Self::Err> {
+    fn try_from(data: Vec<u8>) -> Result<Self, Self::Err> {
+        Cid::try_from(data.as_slice())
+    }
+}
+
+impl TryFrom<String> for Cid {
+    type Err = Error;
+
+    fn try_from(data: String) -> Result<Self, Self::Err> {
+        Cid::try_from(&data[..])
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Cid {
+    type Err = Error;
+
+    fn try_from(data: &str) -> Result<Self, Self::Err> {
+        if data.len() < 2 {
+            return Err(Error::InputTooShort);
+        }
+
+        if data.len() == 46 && &data[0..2] == "Qm" {
+            // TODO: add the mbase codec and send to multibase
+            return Err(Error::Fail);
+        }
+        println!("decoding {:?}", data);
+        multibase::decode(data)
+            .map_err(|_| Error::ParsingError)
+            .and_then(|res| {
+                println!("trying with {:?}\n{:?}", res.1, res.1);
+                Cid::try_from(res.1)
+            })
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Cid {
+    type Err = Error;
+
+    fn try_from(data: &[u8]) -> Result<Self, Self::Err> {
         // legacy multihash
         let is_legacy = data.len() == 34 && data[0] == 18 && data[1] == 32;
 
-        println!("{:} {:} {:}", data.len(), data[0], data[1]);
         if is_legacy {
             multihash::decode(data).unwrap();
-            Ok(Cid::new(Codec::DagProtobuf, 0, data))
+            Ok(Cid::new(Codec::DagProtobuf, 0, data.to_vec()))
         } else {
             let mut data = data;
             let version = data.read_u64_varint().unwrap();
             let codec = data.read_u64_varint()
                 .map(|raw| Codec::from(raw).unwrap())
                 .unwrap();
-            println!("{:?}", data);
-            multihash::decode(&data).unwrap();
-            Ok(Cid::new(codec, version, data))
+            println!("{:?} {:}", data, data.len());
+            // multihash::decode(&data).unwrap();
+            Ok(Cid::new(codec, version, (*data).to_vec()))
         }
     }
 }
 
-impl<'a> Cid<'a> {
-    pub fn new(codec: Codec, version: u64, hash: &'a [u8]) -> Cid {
+impl fmt::Display for Cid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.version {
+            0 => self.to_string_v0(f),
+            1 => self.to_string_v1(f),
+            _ => panic!("should not happen"),
+        }
+    }
+}
+
+impl Cid {
+    pub fn new(codec: Codec, version: u64, hash: Vec<u8>) -> Cid {
         Cid {
             version: version,
             codec: codec,
             hash: hash,
         }
+    }
+
+    fn to_string_v0(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        multibase::encode(multibase::Base::Base58btc, self.hash.as_slice())
+            .map_err(|_| fmt::Error {})
+            .and_then(|enc| f.write_str(&enc))
+    }
+
+    fn to_string_v1(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        multibase::encode(multibase::Base::Base58btc, self.as_bytes().as_slice())
+            .map_err(|_| fmt::Error {})
+            .and_then(|enc| {
+                println!("data {:}", enc);
+                f.write_str(&enc)
+            })
     }
 
     fn as_bytes_v0(&self) -> Vec<u8> {
@@ -139,11 +204,17 @@ mod tests {
     fn basic_marshalling() {
         let h = multihash::encode(multihash::HashTypes::SHA2256, "beep boop".as_bytes()).unwrap();
 
-        let cid = Cid::new(Codec::DagProtobuf, 1, &h);
+        let cid = Cid::new(Codec::DagProtobuf, 1, h.to_vec());
 
         let data = cid.as_bytes();
-        let out = Cid::try_from(data.as_slice()).unwrap();
+        let out = Cid::try_from(data).unwrap();
 
+        println!("first {:?}", h);
         assert_eq!(cid, out);
+
+        let s = cid.to_string();
+        let out2 = Cid::try_from(&s[..]).unwrap();
+        println!("second {:?} {:?} {:?}", cid, out2, &s);
+        assert_eq!(cid, out2);
     }
 }
