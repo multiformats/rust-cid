@@ -125,8 +125,9 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
         let is_legacy = data.len() == 34 && data[0] == 18 && data[1] == 32;
 
         if is_legacy {
-            multihash::decode(data).unwrap();
-            Ok(Cid::new(Codec::DagProtobuf, 0, data.to_vec()))
+            multihash::decode(data)
+                .map_err(|_| Error::ParsingError)
+                .map(|_| Cid::new(Codec::DagProtobuf, 0, data.to_vec()))
         } else {
             let mut data = data;
             let version = data.read_u64_varint().unwrap();
@@ -235,5 +236,11 @@ mod tests {
 
         assert_eq!(cid.version, 0);
         assert_eq!(cid.to_string(), old);
+    }
+
+    #[test]
+    fn v0_error() {
+        let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
+        assert_eq!(Cid::try_from(bad), Err(Error::ParsingError));
     }
 }
