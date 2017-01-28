@@ -12,7 +12,8 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-multihash = "~0.3.0"
-multibase = "~0.3.0"
+multihash = "~0.4.0"
+multibase = "~0.4.0"
+# multibase = { path = "../rust-multibase" }
 try_from = "~0.2.1"
 varmint = "~0.1.2"
