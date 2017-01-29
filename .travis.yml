@@ -31,4 +31,5 @@ script:
 
 after_success:
   - travis-cargo coverage --no-sudo
-  - codecov --file target/kcov/kcov-merged/cobertura.xml
+  - travis-cargo --only stable doc-upload
+  - travis-cargo coveralls --no-sudo --verify
