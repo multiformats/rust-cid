@@ -2,14 +2,14 @@ extern crate cid;
 extern crate try_from;
 extern crate multihash;
 
-use cid::{Cid, Codec, Error, Prefix};
+use cid::{Cid, Version, Codec, Error, Prefix};
 use try_from::TryFrom;
 
 #[test]
 fn basic_marshalling() {
     let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();
 
-    let cid = Cid::new(Codec::DagProtobuf, 1, h.to_vec());
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
     let data = cid.as_bytes();
     let out = Cid::try_from(data).unwrap();
@@ -32,7 +32,7 @@ fn v0_handling() {
     let old = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
     let cid = Cid::try_from(old).unwrap();
 
-    assert_eq!(cid.version, 0);
+    assert_eq!(cid.version, Version::V0);
     assert_eq!(cid.to_string(), old);
 }
 
@@ -47,7 +47,7 @@ fn prefix_roundtrip() {
     let data = b"awesome test content";
     let h = multihash::encode(multihash::Hash::SHA2256, data).unwrap();
 
-    let cid = Cid::new(Codec::DagProtobuf, 1, h.to_vec());
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
     let prefix = cid.prefix();
 
     let cid2 = Cid::new_from_prefix(&prefix, data);
@@ -72,7 +72,7 @@ fn try_from() {
 
     for case in cases {
         let cid = Cid::try_from(case).unwrap();
-        assert_eq!(cid.version, 0);
+        assert_eq!(cid.version, Version::V0);
         assert_eq!(cid.to_string(), the_hash);
     }
 }

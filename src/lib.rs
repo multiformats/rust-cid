@@ -7,111 +7,19 @@ extern crate multibase;
 extern crate try_from;
 extern crate varmint;
 
-use try_from::TryFrom;
-use varmint::{WriteVarInt, ReadVarInt};
-use std::fmt;
+use std::io;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Codec {
-    Raw,
-    DagProtobuf,
-    DagCBOR,
-    EthereumBlock,
-    EthereumTx,
-    BitcoinBlock,
-    BitcoinTx,
-    ZcashBlock,
-    ZcashTx,
-}
+pub mod error;
+pub mod codec;
+pub mod version;
 
-impl Codec {
-    /// Convert to the matching integer code
-    pub fn to_code(&self) -> u64 {
-        use Codec::*;
+pub use codec::Codec;
+pub use version::Version;
+pub use error::{Error, Result};
 
-        match *self {
-            Raw => 0x55,
-            DagProtobuf => 0x70,
-            DagCBOR => 0x71,
-            EthereumBlock => 0x90,
-            EthereumTx => 0x91,
-            BitcoinBlock => 0xb0,
-            BitcoinTx => 0xb1,
-            ZcashBlock => 0xc0,
-            ZcashTx => 0xc1,
-        }
-    }
-
-    /// Convert a number to the matching codec
-    pub fn from(raw: u64) -> Result<Codec, Error> {
-        use Codec::*;
-
-        match raw {
-            0x55 => Ok(Raw),
-            0x70 => Ok(DagProtobuf),
-            0x71 => Ok(DagCBOR),
-            0x90 => Ok(EthereumBlock),
-            0x91 => Ok(EthereumTx),
-            0xb0 => Ok(BitcoinBlock),
-            0xb1 => Ok(BitcoinTx),
-            0xc0 => Ok(ZcashBlock),
-            0xc1 => Ok(ZcashTx),
-            _ => Err(Error::UnkownCodec),
-        }
-    }
-}
-
-/// Representation of a CID.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Cid {
-    pub version: u64,
-    pub codec: Codec,
-    pub hash: Vec<u8>,
-}
-
-/// Prefix represents all metadata of a CID, without the actual content.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Prefix {
-    pub version: u64,
-    pub codec: Codec,
-    pub mh_type: multihash::Hash,
-    pub mh_len: usize,
-}
-
-/// Error types
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Error {
-    UnkownCodec,
-    InputTooShort,
-    ParsingError,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Error::*;
-
-        match *self {
-            UnkownCodec => write!(f, "Unkown codec"),
-            InputTooShort => write!(f, "Input too short"),
-            ParsingError => write!(f, "Failed to parse multihash"),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn description(&self) -> &str {
-        use Error::*;
-
-        match *self {
-            UnkownCodec => "Unkown codec",
-            InputTooShort => "Input too short",
-            ParsingError => "Failed to parse multihash",
-        }
-    }
-}
-
-impl From<std::io::Error> for Error {
-    fn from(_: std::io::Error) -> Error {
+// No idea why these can't be in error.rs, will look later
+impl From<io::Error> for Error {
+    fn from(_: io::Error) -> Error {
         Error::ParsingError
     }
 }
@@ -128,12 +36,32 @@ impl From<multihash::Error> for Error {
     }
 }
 
+use try_from::TryFrom;
+use varmint::{WriteVarInt, ReadVarInt};
+use std::fmt;
+
+/// Representation of a CID.
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct Cid {
+    pub version: Version,
+    pub codec: Codec,
+    pub hash: Vec<u8>,
+}
+
+/// Prefix represents all metadata of a CID, without the actual content.
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct Prefix {
+    pub version: Version,
+    pub codec: Codec,
+    pub mh_type: multihash::Hash,
+    pub mh_len: usize,
+}
 
 impl TryFrom<Vec<u8>> for Cid {
     type Err = Error;
 
     /// Create a Cid from a u8 vector.
-    fn try_from(data: Vec<u8>) -> Result<Self, Self::Err> {
+    fn try_from(data: Vec<u8>) -> Result<Self> {
         Cid::try_from(data.as_slice())
     }
 }
@@ -142,7 +70,7 @@ impl TryFrom<String> for Cid {
     type Err = Error;
 
     /// Create a Cid from a string.
-    fn try_from(data: String) -> Result<Self, Self::Err> {
+    fn try_from(data: String) -> Result<Self> {
         Cid::try_from(data.as_str())
     }
 }
@@ -151,7 +79,7 @@ impl<'a> TryFrom<&'a str> for Cid {
     type Err = Error;
 
     /// Create a Cid from a string slice.
-    fn try_from(data: &str) -> Result<Self, Self::Err> {
+    fn try_from(data: &str) -> Result<Self> {
         let hash = if data.contains("/ipfs/") {
             let matches: Vec<&str> = data.split("/ipfs/").collect();
             matches[1]
@@ -163,14 +91,17 @@ impl<'a> TryFrom<&'a str> for Cid {
             return Err(Error::InputTooShort);
         }
 
-        let mut hash = hash.to_string();
+        let (_, decoded) = if Version::is_v0_str(hash) {
+            // TODO: could avoid the roundtrip here and just use underlying
+            // base-x base58btc decoder here.
+            let hash = multibase::Base::Base58btc.code().to_string() + &hash;
 
-        if hash.len() == 46 && &hash[0..2] == "Qm" {
-            hash = multibase::Base::Base58btc.code().to_string() + &hash;
-        }
+            multibase::decode(hash)
+        } else {
+            multibase::decode(hash)
+        }?;
 
-        let decoded = multibase::decode(hash)?;
-        Cid::try_from(decoded.1)
+        Cid::try_from(decoded)
     }
 }
 
@@ -178,21 +109,22 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
     type Err = Error;
 
     /// Create a Cid from a byte slice.
-    fn try_from(data: &[u8]) -> Result<Self, Self::Err> {
-        // legacy multihash
-        let is_legacy = data.len() == 34 && data[0] == 18 && data[1] == 32;
-
-        if is_legacy {
+    fn try_from(data: &[u8]) -> Result<Self> {
+        if Version::is_v0_binary(data) {
             multihash::decode(data)?;
-            Ok(Cid::new(Codec::DagProtobuf, 0, data.to_vec()))
+
+            Ok(Cid::new(Codec::DagProtobuf, Version::V0, data))
         } else {
             let mut data = data;
-            let version = data.read_u64_varint()?;
+            let raw_version = data.read_u64_varint()?;
             let raw_codec = data.read_u64_varint()?;
+
+            let version = Version::from(raw_version)?;
             let codec = Codec::from(raw_codec)?;
 
-            multihash::decode(&data)?;
-            Ok(Cid::new(codec, version, (*data).to_vec()))
+            multihash::decode(data)?;
+
+            Ok(Cid::new(codec, version, data))
         }
     }
 }
@@ -200,20 +132,19 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.version {
-            0 => self.to_string_v0(f),
-            1 => self.to_string_v1(f),
-            _ => panic!("should not happen"),
+            Version::V0 => self.to_string_v0(f),
+            Version::V1 => self.to_string_v1(f),
         }
     }
 }
 
 impl Cid {
     /// Create a new CID.
-    pub fn new(codec: Codec, version: u64, hash: Vec<u8>) -> Cid {
+    pub fn new(codec: Codec, version: Version, hash: &[u8]) -> Cid {
         Cid {
             version: version,
             codec: codec,
-            hash: hash,
+            hash: hash.into(),
         }
     }
 
@@ -244,23 +175,22 @@ impl Cid {
     }
 
     fn as_bytes_v0(&self) -> Vec<u8> {
-        self.hash.iter().cloned().collect()
+        self.hash.clone()
     }
 
     fn as_bytes_v1(&self) -> Vec<u8> {
-        let mut res = vec![];
-        res.write_u64_varint(self.version).unwrap();
-        res.write_u64_varint(self.codec.to_code()).unwrap();
-        res.extend(self.hash.iter().cloned().collect::<Vec<u8>>());
+        let mut res = Vec::with_capacity(16);
+        res.write_u64_varint(self.version.into()).unwrap();
+        res.write_u64_varint(self.codec.into()).unwrap();
+        res.extend_from_slice(&self.hash);
 
         res
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
         match self.version {
-            0 => self.as_bytes_v0(),
-            1 => self.as_bytes_v1(),
-            _ => panic!("should not happen"),
+            Version::V0 => self.as_bytes_v0(),
+            Version::V1 => self.as_bytes_v1(),
         }
     }
 
@@ -278,12 +208,14 @@ impl Cid {
 }
 
 impl Prefix {
-    pub fn new_from_bytes(data: &[u8]) -> Result<Prefix, Error> {
+    pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
         let mut data = data;
-        let version = data.read_u64_varint()?;
+        let raw_version = data.read_u64_varint()?;
         let raw_codec = data.read_u64_varint()?;
-        let codec = Codec::from(raw_codec)?;
         let raw_mh_type = data.read_u64_varint()?;
+
+        let version = Version::from(raw_version)?;
+        let codec = Codec::from(raw_codec)?;
         let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
 
         let mh_len = data.read_u64_varint()?;
@@ -297,9 +229,11 @@ impl Prefix {
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
-        let mut res = vec![];
-        res.write_u64_varint(self.version).unwrap();
-        res.write_u64_varint(self.codec.to_code()).unwrap();
+        let mut res = Vec::with_capacity(4);
+
+        // io can't fail on Vec
+        res.write_u64_varint(self.version.into()).unwrap();
+        res.write_u64_varint(self.codec.into()).unwrap();
         res.write_u64_varint(self.mh_type.code() as u64).unwrap();
         res.write_u64_varint(self.mh_len as u64).unwrap();
 
