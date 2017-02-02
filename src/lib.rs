@@ -122,6 +122,12 @@ impl From<multibase::Error> for Error {
     }
 }
 
+impl From<multihash::Error> for Error {
+    fn from(_: multihash::Error) -> Error {
+        Error::ParsingError
+    }
+}
+
 
 impl TryFrom<Vec<u8>> for Cid {
     type Err = Error;
@@ -163,7 +169,7 @@ impl<'a> TryFrom<&'a str> for Cid {
             hash = multibase::Base::Base58btc.code().to_string() + &hash;
         }
 
-        let decoded = try!(multibase::decode(hash));
+        let decoded = multibase::decode(hash)?;
         Cid::try_from(decoded.1)
     }
 }
@@ -177,15 +183,15 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
         let is_legacy = data.len() == 34 && data[0] == 18 && data[1] == 32;
 
         if is_legacy {
-            try!(multihash::decode(data));
+            multihash::decode(data)?;
             Ok(Cid::new(Codec::DagProtobuf, 0, data.to_vec()))
         } else {
             let mut data = data;
-            let version = try!(data.read_u64_varint());
-            let raw_codec = try!(data.read_u64_varint());
-            let codec = try!(Codec::from(raw_codec));
+            let version = data.read_u64_varint()?;
+            let raw_codec = data.read_u64_varint()?;
+            let codec = Codec::from(raw_codec)?;
 
-            try!(multihash::decode(&data));
+            multihash::decode(&data)?;
             Ok(Cid::new(codec, version, (*data).to_vec()))
         }
     }
@@ -274,14 +280,13 @@ impl Cid {
 impl Prefix {
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix, Error> {
         let mut data = data;
-        let version = try!(data.read_u64_varint());
-        let raw_codec = try!(data.read_u64_varint());
-        let codec = try!(Codec::from(raw_codec));
-        let raw_mh_type = try!(data.read_u64_varint());
-        let mh_type = try!(multihash::Hash::from_code(raw_mh_type as u8)
-            .ok_or(Error::ParsingError));
+        let version = data.read_u64_varint()?;
+        let raw_codec = data.read_u64_varint()?;
+        let codec = Codec::from(raw_codec)?;
+        let raw_mh_type = data.read_u64_varint()?;
+        let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
 
-        let mh_len = try!(data.read_u64_varint());
+        let mh_len = data.read_u64_varint()?;
 
         Ok(Prefix {
             version: version,
