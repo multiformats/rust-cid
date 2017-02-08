@@ -34,18 +34,15 @@ Then run `cargo build`.
 ```rust
 extern crate cid;
 extern crate multihash;
-extern crate try_from;
 
 use multihash::Hash;
-use cid::{Cid, Codec};
-use try_from::TryFrom;
+use cid::{Cid, Codec, Version};
+let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();
 
-let h = multihash::encode(Hash::SHA2256, b"beep boop").unwrap();
+let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
-let cid = Cid::new(Codec::DagProtobuf, 1, h.to_vec());
-
-let data = cid.as_bytes();
-let out = Cid::try_from(data).unwrap();
+let data = cid.to_bytes();
+let out = Cid::from(data).unwrap();
 
 assert_eq!(cid, out);
 ```
