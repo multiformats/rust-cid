@@ -33,11 +33,11 @@ impl<'a> ToCid for &'a str {
 
 impl ToCid for str {
     fn to_cid(&self) -> Result<Cid> {
-        let hash = if self.contains("/ipfs/") {
-            let matches: Vec<&str> = self.split("/ipfs/").collect();
-            matches[1]
-        } else {
-            self
+        static IPFS_DELIMETER: &'static str = "/ipfs/";
+
+        let hash = match self.find(IPFS_DELIMETER) {
+            Some(index) => &self[index + IPFS_DELIMETER.len()..],
+            _ => self
         };
 
         if hash.len() < 2 {
