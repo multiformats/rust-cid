@@ -14,7 +14,7 @@ fn basic_marshalling() {
 
     assert_eq!(cid, out);
 
-    let s = cid.to_string().unwrap();
+    let s = cid.to_string();
     let out2 = Cid::from(&s[..]).unwrap();
 
     assert_eq!(cid, out2);
@@ -31,7 +31,7 @@ fn v0_handling() {
     let cid = Cid::from(old).unwrap();
 
     assert_eq!(cid.version, Version::V0);
-    assert_eq!(cid.to_string().unwrap(), old);
+    assert_eq!(cid.to_string(), old);
 }
 
 #[test]
@@ -71,6 +71,6 @@ fn from() {
     for case in cases {
         let cid = Cid::from(case).unwrap();
         assert_eq!(cid.version, Version::V0);
-        assert_eq!(cid.to_string().unwrap(), the_hash);
+        assert_eq!(cid.to_string(), the_hash);
     }
 }

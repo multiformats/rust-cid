@@ -62,25 +62,25 @@ impl Cid {
         }
     }
 
-    fn to_string_v0(&self) -> Result<String> {
+    fn to_string_v0(&self) -> String {
         use multibase::{encode, Base};
 
-        let mut string = encode(Base::Base58btc, self.hash.as_slice())?;
+        let mut string = encode(Base::Base58btc, self.hash.as_slice());
 
         // Drop the first character as v0 does not know
         // about multibase
         string.remove(0);
 
-        Ok(string)
+        string
     }
 
-    fn to_string_v1(&self) -> Result<String> {
+    fn to_string_v1(&self) -> String {
         use multibase::{encode, Base};
 
-        encode(Base::Base58btc, self.to_bytes().as_slice()).map_err(Into::into)
+        encode(Base::Base58btc, self.to_bytes().as_slice())
     }
 
-    pub fn to_string(&self) -> Result<String> {
+    pub fn to_string(&self) -> String {
         match self.version {
             Version::V0 => self.to_string_v0(),
             Version::V1 => self.to_string_v1(),
@@ -122,7 +122,7 @@ impl Cid {
 
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", Cid::to_string(self)?)
+        write!(f, "{}", Cid::to_string(self))
     }
 }
 
