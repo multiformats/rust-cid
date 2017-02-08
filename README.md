@@ -4,7 +4,7 @@
 [![](https://img.shields.io/badge/project-ipld-blue.svg?style=flat-square)](https://github.com/ipld/ipld)
 [![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](https://webchat.freenode.net/?channels=%23ipfs)
 [![Travis CI](https://img.shields.io/travis/ipld/rust-cid.svg?style=flat-square&branch=master)](https://travis-ci.org/ipld/rust-cid)
-[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](https://ipld.github.io/rust-cid/cid/index.html)
+[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](https://docs.rs/crate/cid)
 [![crates.io](https://img.shields.io/badge/crates.io-v0.1.0-orange.svg?style=flat-square )](https://crates.io/crates/cid)
 [![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
