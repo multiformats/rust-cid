@@ -4,39 +4,18 @@
 
 extern crate multihash;
 extern crate multibase;
-extern crate try_from;
 extern crate varmint;
 
-use std::io;
+mod to_cid;
+mod error;
+mod codec;
+mod version;
 
-pub mod error;
-pub mod codec;
-pub mod version;
-
-pub use codec::Codec;
+pub use to_cid::ToCid;
 pub use version::Version;
+pub use codec::Codec;
 pub use error::{Error, Result};
 
-// No idea why these can't be in error.rs, will look later
-impl From<io::Error> for Error {
-    fn from(_: io::Error) -> Error {
-        Error::ParsingError
-    }
-}
-
-impl From<multibase::Error> for Error {
-    fn from(_: multibase::Error) -> Error {
-        Error::ParsingError
-    }
-}
-
-impl From<multihash::Error> for Error {
-    fn from(_: multihash::Error) -> Error {
-        Error::ParsingError
-    }
-}
-
-use try_from::TryFrom;
 use varmint::{WriteVarInt, ReadVarInt};
 use std::fmt;
 
@@ -57,89 +36,6 @@ pub struct Prefix {
     pub mh_len: usize,
 }
 
-impl TryFrom<Vec<u8>> for Cid {
-    type Err = Error;
-
-    /// Create a Cid from a u8 vector.
-    fn try_from(data: Vec<u8>) -> Result<Self> {
-        Cid::try_from(data.as_slice())
-    }
-}
-
-impl TryFrom<String> for Cid {
-    type Err = Error;
-
-    /// Create a Cid from a string.
-    fn try_from(data: String) -> Result<Self> {
-        Cid::try_from(data.as_str())
-    }
-}
-
-impl<'a> TryFrom<&'a str> for Cid {
-    type Err = Error;
-
-    /// Create a Cid from a string slice.
-    fn try_from(data: &str) -> Result<Self> {
-        let hash = if data.contains("/ipfs/") {
-            let matches: Vec<&str> = data.split("/ipfs/").collect();
-            matches[1]
-        } else {
-            data
-        };
-
-        if hash.len() < 2 {
-            return Err(Error::InputTooShort);
-        }
-
-        let (_, decoded) = if Version::is_v0_str(hash) {
-            // TODO: could avoid the roundtrip here and just use underlying
-            // base-x base58btc decoder here.
-            let hash = multibase::Base::Base58btc.code().to_string() + &hash;
-
-            multibase::decode(hash)
-        } else {
-            multibase::decode(hash)
-        }?;
-
-        Cid::try_from(decoded)
-    }
-}
-
-impl<'a> TryFrom<&'a [u8]> for Cid {
-    type Err = Error;
-
-    /// Create a Cid from a byte slice.
-    fn try_from(data: &[u8]) -> Result<Self> {
-        if Version::is_v0_binary(data) {
-            // Verify that hash can be decoded, this is very cheap
-            multihash::decode(data)?;
-
-            Ok(Cid::new(Codec::DagProtobuf, Version::V0, data))
-        } else {
-            let mut data = data;
-            let raw_version = data.read_u64_varint()?;
-            let raw_codec = data.read_u64_varint()?;
-
-            let version = Version::from(raw_version)?;
-            let codec = Codec::from(raw_codec)?;
-
-            // Verify that hash can be decoded, this is very cheap
-            multihash::decode(data)?;
-
-            Ok(Cid::new(codec, version, data))
-        }
-    }
-}
-
-impl fmt::Display for Cid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.version {
-            Version::V0 => self.to_string_v0(f),
-            Version::V1 => self.to_string_v1(f),
-        }
-    }
-}
-
 impl Cid {
     /// Create a new CID.
     pub fn new(codec: Codec, version: Version, hash: &[u8]) -> Cid {
@@ -148,6 +44,11 @@ impl Cid {
             codec: codec,
             hash: hash.into(),
         }
+    }
+
+    /// Create a new
+    pub fn from<T: ToCid>(data: T) -> Result<Cid> {
+        data.to_cid()
     }
 
     /// Create a new CID from a prefix and some data.
@@ -161,26 +62,36 @@ impl Cid {
         }
     }
 
-    fn to_string_v0(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        multibase::encode(multibase::Base::Base58btc, self.hash.as_slice())
-            .map_err(|_| fmt::Error {})
-            .and_then(|enc| {
-                // Drop the first character as v0 does not know                 // about multibase
-                f.write_str(&enc[1..])
-            })
+    fn to_string_v0(&self) -> Result<String> {
+        use multibase::{encode, Base};
+
+        let mut string = encode(Base::Base58btc, self.hash.as_slice())?;
+
+        // Drop the first character as v0 does not know
+        // about multibase
+        string.remove(0);
+
+        Ok(string)
     }
 
-    fn to_string_v1(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        multibase::encode(multibase::Base::Base58btc, self.as_bytes().as_slice())
-            .map_err(|_| fmt::Error {})
-            .and_then(|enc| f.write_str(&enc))
+    fn to_string_v1(&self) -> Result<String> {
+        use multibase::{encode, Base};
+
+        encode(Base::Base58btc, self.to_bytes().as_slice()).map_err(Into::into)
     }
 
-    fn as_bytes_v0(&self) -> Vec<u8> {
+    pub fn to_string(&self) -> Result<String> {
+        match self.version {
+            Version::V0 => self.to_string_v0(),
+            Version::V1 => self.to_string_v1(),
+        }
+    }
+
+    fn to_bytes_v0(&self) -> Vec<u8> {
         self.hash.clone()
     }
 
-    fn as_bytes_v1(&self) -> Vec<u8> {
+    fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
         res.write_u64_varint(self.version.into()).unwrap();
         res.write_u64_varint(self.codec.into()).unwrap();
@@ -189,10 +100,10 @@ impl Cid {
         res
     }
 
-    pub fn as_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         match self.version {
-            Version::V0 => self.as_bytes_v0(),
-            Version::V1 => self.as_bytes_v1(),
+            Version::V0 => self.to_bytes_v0(),
+            Version::V1 => self.to_bytes_v1(),
         }
     }
 
@@ -206,6 +117,12 @@ impl Cid {
             mh_type: mh.alg,
             mh_len: mh.digest.len(),
         }
+    }
+}
+
+impl fmt::Display for Cid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", Cid::to_string(self)?)
     }
 }
 

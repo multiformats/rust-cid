@@ -1,4 +1,4 @@
-use error::{Error, Result};
+use {Error, Result};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Codec {

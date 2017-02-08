@@ -1,9 +1,7 @@
 extern crate cid;
-extern crate try_from;
 extern crate multihash;
 
 use cid::{Cid, Version, Codec, Error, Prefix};
-use try_from::TryFrom;
 
 #[test]
 fn basic_marshalling() {
@@ -11,35 +9,35 @@ fn basic_marshalling() {
 
     let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
-    let data = cid.as_bytes();
-    let out = Cid::try_from(data).unwrap();
+    let data = cid.to_bytes();
+    let out = Cid::from(data).unwrap();
 
     assert_eq!(cid, out);
 
-    let s = cid.to_string();
-    let out2 = Cid::try_from(&s[..]).unwrap();
+    let s = cid.to_string().unwrap();
+    let out2 = Cid::from(&s[..]).unwrap();
 
     assert_eq!(cid, out2);
 }
 
 #[test]
 fn empty_string() {
-    assert_eq!(Cid::try_from(""), Err(Error::InputTooShort));
+    assert_eq!(Cid::from(""), Err(Error::InputTooShort));
 }
 
 #[test]
 fn v0_handling() {
     let old = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
-    let cid = Cid::try_from(old).unwrap();
+    let cid = Cid::from(old).unwrap();
 
     assert_eq!(cid.version, Version::V0);
-    assert_eq!(cid.to_string(), old);
+    assert_eq!(cid.to_string().unwrap(), old);
 }
 
 #[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
-    assert_eq!(Cid::try_from(bad), Err(Error::ParsingError));
+    assert_eq!(Cid::from(bad), Err(Error::ParsingError));
 }
 
 #[test]
@@ -61,7 +59,7 @@ fn prefix_roundtrip() {
 }
 
 #[test]
-fn try_from() {
+fn from() {
     let the_hash = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
 
     let cases = vec![
@@ -71,8 +69,8 @@ fn try_from() {
     ];
 
     for case in cases {
-        let cid = Cid::try_from(case).unwrap();
+        let cid = Cid::from(case).unwrap();
         assert_eq!(cid.version, Version::V0);
-        assert_eq!(cid.to_string(), the_hash);
+        assert_eq!(cid.to_string().unwrap(), the_hash);
     }
 }

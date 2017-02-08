@@ -1,4 +1,6 @@
-use std::{fmt, error};
+use std::{fmt, error, io};
+use multibase;
+use multihash;
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
@@ -27,5 +29,30 @@ impl error::Error for Error {
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
         }
+    }
+}
+
+// No idea why these can't be in error.rs, will look later
+impl From<io::Error> for Error {
+    fn from(_: io::Error) -> Error {
+        Error::ParsingError
+    }
+}
+
+impl From<multibase::Error> for Error {
+    fn from(_: multibase::Error) -> Error {
+        Error::ParsingError
+    }
+}
+
+impl From<multihash::Error> for Error {
+    fn from(_: multihash::Error) -> Error {
+        Error::ParsingError
+    }
+}
+
+impl From<Error> for fmt::Error {
+    fn from(_: Error) -> fmt::Error {
+        fmt::Error {}
     }
 }
