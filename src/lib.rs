@@ -111,6 +111,7 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
     /// Create a Cid from a byte slice.
     fn try_from(data: &[u8]) -> Result<Self> {
         if Version::is_v0_binary(data) {
+            // Verify that hash can be decoded, this is very cheap
             multihash::decode(data)?;
 
             Ok(Cid::new(Codec::DagProtobuf, Version::V0, data))
@@ -122,6 +123,7 @@ impl<'a> TryFrom<&'a [u8]> for Cid {
             let version = Version::from(raw_version)?;
             let codec = Codec::from(raw_codec)?;
 
+            // Verify that hash can be decoded, this is very cheap
             multihash::decode(data)?;
 
             Ok(Cid::new(codec, version, data))
