@@ -212,12 +212,14 @@ impl Cid {
 impl Prefix {
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
         let mut data = data;
+
         let raw_version = data.read_u64_varint()?;
         let raw_codec = data.read_u64_varint()?;
         let raw_mh_type = data.read_u64_varint()?;
 
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
+
         let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
 
         let mh_len = data.read_u64_varint()?;
