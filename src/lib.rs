@@ -46,7 +46,7 @@ impl Cid {
         }
     }
 
-    /// Create a new
+    /// Create a new CID from raw data (binary or multibase encoded string)
     pub fn from<T: ToCid>(data: T) -> Result<Cid> {
         data.to_cid()
     }
