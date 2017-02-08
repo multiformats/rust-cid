@@ -32,7 +32,6 @@ impl error::Error for Error {
     }
 }
 
-// No idea why these can't be in error.rs, will look later
 impl From<io::Error> for Error {
     fn from(_: io::Error) -> Error {
         Error::ParsingError
