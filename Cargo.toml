@@ -13,6 +13,5 @@ readme = "README.md"
 
 [dependencies]
 multihash = "~0.5.0"
-multibase = "~0.4.0"
-try_from = "~0.2.1"
+multibase = "~0.6.0"
 varmint = "~0.1.2"
