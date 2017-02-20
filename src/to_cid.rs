@@ -1,6 +1,7 @@
+use std::io::Cursor;
 use multibase;
 use multihash;
-use varmint::ReadVarInt;
+use integer_encoding::VarIntReader;
 
 use {Cid, Version, Codec, Error, Result};
 
@@ -74,17 +75,19 @@ impl ToCid for [u8] {
 
             Ok(Cid::new(Codec::DagProtobuf, Version::V0, self))
         } else {
-            let mut data = self;
-            let raw_version = data.read_u64_varint()?;
-            let raw_codec = data.read_u64_varint()?;
+            let mut cur = Cursor::new(self);
+            let raw_version = cur.read_varint()?;
+            let raw_codec = cur.read_varint()?;
 
             let version = Version::from(raw_version)?;
             let codec = Codec::from(raw_codec)?;
 
-            // Verify that hash can be decoded, this is very cheap
-            multihash::decode(data)?;
+            let hash = &self[cur.position() as usize..];
 
-            Ok(Cid::new(codec, version, data))
+            // Verify that hash can be decoded, this is very cheap
+            multihash::decode(hash)?;
+
+            Ok(Cid::new(codec, version, hash))
         }
     }
 }

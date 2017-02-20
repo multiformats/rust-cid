@@ -14,4 +14,4 @@ readme = "README.md"
 [dependencies]
 multihash = "~0.5.0"
 multibase = "~0.6.0"
-varmint = "~0.1.2"
+integer-encoding = "~1.0.3"

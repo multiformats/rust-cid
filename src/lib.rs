@@ -4,7 +4,7 @@
 
 extern crate multihash;
 extern crate multibase;
-extern crate varmint;
+extern crate integer_encoding;
 
 mod to_cid;
 mod error;
@@ -16,8 +16,9 @@ pub use version::Version;
 pub use codec::Codec;
 pub use error::{Error, Result};
 
-use varmint::{WriteVarInt, ReadVarInt};
+use integer_encoding::{VarIntReader, VarIntWriter};
 use std::fmt;
+use std::io::Cursor;
 
 /// Representation of a CID.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -93,8 +94,8 @@ impl Cid {
 
     fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
-        res.write_u64_varint(self.version.into()).unwrap();
-        res.write_u64_varint(self.codec.into()).unwrap();
+        res.write_varint(u64::from(self.version)).unwrap();
+        res.write_varint(u64::from(self.codec)).unwrap();
         res.extend_from_slice(&self.hash);
 
         res
@@ -128,24 +129,24 @@ impl fmt::Display for Cid {
 
 impl Prefix {
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
-        let mut data = data;
+        let mut cur = Cursor::new(data);
 
-        let raw_version = data.read_u64_varint()?;
-        let raw_codec = data.read_u64_varint()?;
-        let raw_mh_type = data.read_u64_varint()?;
+        let raw_version = cur.read_varint()?;
+        let raw_codec = cur.read_varint()?;
+        let raw_mh_type: u64 = cur.read_varint()?;
 
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
 
         let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
 
-        let mh_len = data.read_u64_varint()?;
+        let mh_len = cur.read_varint()?;
 
         Ok(Prefix {
             version: version,
             codec: codec,
             mh_type: mh_type,
-            mh_len: mh_len as usize,
+            mh_len: mh_len,
         })
     }
 
@@ -153,10 +154,10 @@ impl Prefix {
         let mut res = Vec::with_capacity(4);
 
         // io can't fail on Vec
-        res.write_u64_varint(self.version.into()).unwrap();
-        res.write_u64_varint(self.codec.into()).unwrap();
-        res.write_u64_varint(self.mh_type.code() as u64).unwrap();
-        res.write_u64_varint(self.mh_len as u64).unwrap();
+        res.write_varint(u64::from(self.version)).unwrap();
+        res.write_varint(u64::from(self.codec)).unwrap();
+        res.write_varint(self.mh_type.code() as u64).unwrap();
+        res.write_varint(self.mh_len as u64).unwrap();
 
         res
     }
