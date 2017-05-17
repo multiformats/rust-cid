@@ -12,6 +12,6 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-multihash = "~0.5.0"
+multihash = "~0.6.0"
 multibase = "~0.6.0"
 integer-encoding = "~1.0.3"
