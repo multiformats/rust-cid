@@ -15,3 +15,8 @@ readme = "README.md"
 multihash = "~0.6.0"
 multibase = "~0.6.0"
 integer-encoding = "~1.0.3"
+
+[package.metadata.release]
+upload-doc = true
+pre-release-commit-message = "Release {{version}} 🎉🎉"
+no-dev-version = true
