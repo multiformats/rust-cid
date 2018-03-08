@@ -5,6 +5,7 @@ macro_rules! build_codec_enum {
         #[derive(PartialEq, Eq, Clone, Copy, Debug)]
         pub enum Codec {
             $( $var, )*
+            Unknown(u64),
         }
 
         use Codec::*;
@@ -24,7 +25,7 @@ macro_rules! build_codec_enum {
             fn from(codec: Codec) -> u64 {
                 match codec {
                     $( $var => $val, )*
-
+                    Unknown(val) => val,
                 }
             }
         }
