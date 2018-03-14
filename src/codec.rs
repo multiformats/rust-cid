@@ -14,7 +14,7 @@ macro_rules! build_codec_enum {
             pub fn from(raw: u64) -> Result<Codec> {
                 match raw {
                     $( $val => Ok($var), )*
-                    _ => Err(Error::UnkownCodec),
+                    _ => Err(Error::UnknownCodec),
                 }
             }
         }

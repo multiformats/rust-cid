@@ -7,7 +7,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 /// Error types
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Error {
-    UnkownCodec,
+    UnknownCodec,
     InputTooShort,
     ParsingError,
     InvalidCidVersion,
@@ -24,7 +24,7 @@ impl error::Error for Error {
         use self::Error::*;
 
         match *self {
-            UnkownCodec => "Unkown codec",
+            UnknownCodec => "Unknown codec",
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
