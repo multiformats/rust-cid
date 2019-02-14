@@ -121,6 +121,12 @@ impl Cid {
     }
 }
 
+impl std::hash::Hash for Cid {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.to_bytes().hash(state);
+    }
+}
+
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", Cid::to_string(self))
