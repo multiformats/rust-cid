@@ -2,6 +2,7 @@ extern crate cid;
 extern crate multihash;
 
 use cid::{Cid, Version, Codec, Error, Prefix};
+use std::collections::HashMap;
 
 #[test]
 fn basic_marshalling() {
@@ -73,4 +74,19 @@ fn from() {
         assert_eq!(cid.version, Version::V0);
         assert_eq!(cid.to_string(), the_hash);
     }
+}
+
+#[test]
+fn test_hash() {
+    let data: Vec<u8> = vec![1, 2, 3];
+    let prefix = Prefix {
+        version: Version::V0,
+        codec: Codec::DagProtobuf,
+        mh_type: multihash::Hash::SHA2256,
+        mh_len: 32,
+    };
+    let mut map = HashMap::new();
+    let cid = Cid::new_from_prefix(&prefix, &data);
+    map.insert(cid.clone(), data.clone());
+    assert_eq!(&data, map.get(&cid).unwrap());
 }
