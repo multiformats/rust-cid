@@ -36,6 +36,15 @@ fn v0_handling() {
 }
 
 #[test]
+fn from_str() {
+    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n".parse().unwrap();
+    assert_eq!(cid.version, Version::V0);
+
+    let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII".parse::<Cid>();
+    assert_eq!(bad, Err(Error::ParsingError));
+}
+
+#[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
     assert_eq!(Cid::from(bad), Err(Error::ParsingError));

@@ -1,4 +1,5 @@
 use std::io::Cursor;
+use std::str::FromStr;
 use multibase;
 use multihash;
 use integer_encoding::VarIntReader;
@@ -56,6 +57,14 @@ impl ToCid for str {
         }?;
 
         decoded.to_cid()
+    }
+}
+
+
+impl FromStr for Cid {
+    type Err = Error;
+    fn from_str(src: &str) -> Result<Self> {
+        src.to_cid()
     }
 }
 
