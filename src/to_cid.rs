@@ -4,7 +4,7 @@ use multibase;
 use multihash;
 use integer_encoding::VarIntReader;
 
-use {Cid, Version, Codec, Error, Result};
+use crate::{Cid, Version, Codec, Error, Result};
 
 pub trait ToCid {
     fn to_cid(&self) -> Result<Cid>;

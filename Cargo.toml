@@ -4,7 +4,7 @@ version = "0.3.1"
 description = "CID in rust"
 homepage = "https://github.com/multiformats/rust-cid"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
-
+edition = "2018"
 keywords = ["ipld", "ipfs", "cid", "multihash", "multiformats"]
 
 license = "MIT"

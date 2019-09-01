@@ -2,9 +2,10 @@
 /// !
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 
-extern crate multihash;
-extern crate multibase;
-extern crate integer_encoding;
+use multihash::Hash;
+use integer_encoding::{VarIntReader, VarIntWriter};
+use std::fmt;
+use std::io::Cursor;
 
 mod to_cid;
 mod error;
@@ -15,10 +16,6 @@ pub use to_cid::ToCid;
 pub use version::Version;
 pub use codec::Codec;
 pub use error::{Error, Result};
-
-use integer_encoding::{VarIntReader, VarIntWriter};
-use std::fmt;
-use std::io::Cursor;
 
 /// Representation of a CID.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -33,7 +30,7 @@ pub struct Cid {
 pub struct Prefix {
     pub version: Version,
     pub codec: Codec,
-    pub mh_type: multihash::Hash,
+    pub mh_type: Hash,
     pub mh_len: usize,
 }
 
@@ -144,7 +141,7 @@ impl Prefix {
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
 
-        let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
+        let mh_type = Hash::from_code(raw_mh_type as u8)?;
 
         let mh_len = cur.read_varint()?;
 
