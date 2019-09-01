@@ -20,3 +20,6 @@ no-dev-version = true
 multihash = { git = "https://github.com/dvc94ch/rust-multihash", branch = "cli" }
 multibase = "~0.6.0"
 integer-encoding = "~1.0.3"
+
+[workspace]
+members = ["cli"]
