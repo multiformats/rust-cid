@@ -1,35 +1,34 @@
-extern crate cid;
-extern crate multihash;
-
-use cid::{Cid, Version, Codec, Error, Prefix};
+use cid::{Cid, Codec, Error, Prefix, Version};
+use core::convert::TryFrom;
+use multihash::{MultihashDigest, Sha2_256};
 use std::collections::HashMap;
 
 #[test]
 fn basic_marshalling() {
-    let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();
+    let hash = Sha2_256::digest(b"beep boop");
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, hash);
 
     let data = cid.to_bytes();
-    let out = Cid::from(data).unwrap();
+    let out = Cid::try_from(data).unwrap();
 
     assert_eq!(cid, out);
 
     let s = cid.to_string();
-    let out2 = Cid::from(&s[..]).unwrap();
+    let out2 = Cid::try_from(&s[..]).unwrap();
 
     assert_eq!(cid, out2);
 }
 
 #[test]
 fn empty_string() {
-    assert_eq!(Cid::from(""), Err(Error::InputTooShort));
+    assert_eq!(Cid::try_from(""), Err(Error::InputTooShort));
 }
 
 #[test]
 fn v0_handling() {
     let old = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
-    let cid = Cid::from(old).unwrap();
+    let cid = Cid::try_from(old).unwrap();
 
     assert_eq!(cid.version, Version::V0);
     assert_eq!(cid.to_string(), old);
@@ -37,7 +36,9 @@ fn v0_handling() {
 
 #[test]
 fn from_str() {
-    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n".parse().unwrap();
+    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n"
+        .parse()
+        .unwrap();
     assert_eq!(cid.version, Version::V0);
 
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII".parse::<Cid>();
@@ -47,18 +48,17 @@ fn from_str() {
 #[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
-    assert_eq!(Cid::from(bad), Err(Error::ParsingError));
+    assert_eq!(Cid::try_from(bad), Err(Error::ParsingError));
 }
 
 #[test]
 fn prefix_roundtrip() {
-    let data = b"awesome test content";
-    let h = multihash::encode(multihash::Hash::SHA2256, data).unwrap();
+    let hash = Sha2_256::digest(b"awesome test content");
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, hash.clone());
     let prefix = cid.prefix();
 
-    let cid2 = Cid::new_from_prefix(&prefix, data);
+    let cid2 = Cid::new_from_prefix(&prefix, hash);
 
     assert_eq!(cid, cid2);
 
@@ -79,7 +79,7 @@ fn from() {
     ];
 
     for case in cases {
-        let cid = Cid::from(case).unwrap();
+        let cid = Cid::try_from(case).unwrap();
         assert_eq!(cid.version, Version::V0);
         assert_eq!(cid.to_string(), the_hash);
     }
@@ -88,14 +88,13 @@ fn from() {
 #[test]
 fn test_hash() {
     let data: Vec<u8> = vec![1, 2, 3];
+    let hash = Sha2_256::digest(&data);
     let prefix = Prefix {
         version: Version::V0,
         codec: Codec::DagProtobuf,
-        mh_type: multihash::Hash::SHA2256,
-        mh_len: 32,
     };
     let mut map = HashMap::new();
-    let cid = Cid::new_from_prefix(&prefix, &data);
+    let cid = Cid::new_from_prefix(&prefix, hash);
     map.insert(cid.clone(), data.clone());
     assert_eq!(&data, map.get(&cid).unwrap());
 }

@@ -1,8 +1,8 @@
-use crate::{Error, Result};
+use crate::error::Error;
 
 macro_rules! build_codec_enum {
     {$( $val:expr => $var:ident, )*} => {
-        #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         pub enum Codec {
             $( $var, )*
         }
@@ -11,7 +11,7 @@ macro_rules! build_codec_enum {
 
         impl Codec {
             /// Convert a number to the matching codec
-            pub fn from(raw: u64) -> Result<Codec> {
+            pub fn from(raw: u64) -> Result<Codec, Error> {
                 match raw {
                     $( $val => Ok($var), )*
                     _ => Err(Error::UnknownCodec),

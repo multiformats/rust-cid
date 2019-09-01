@@ -1,6 +1,6 @@
-use crate::{Error, Result};
+use crate::error::Error;
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Version {
     V0,
     V1,
@@ -9,11 +9,11 @@ pub enum Version {
 use Version::*;
 
 impl Version {
-    pub fn from(raw: u64) -> Result<Version> {
+    pub fn from(raw: u64) -> Result<Version, Error> {
         match raw {
             0 => Ok(V0),
             1 => Ok(V1),
-            _ => Err(Error::InvalidCidVersion)
+            _ => Err(Error::InvalidCidVersion),
         }
     }
 
@@ -24,7 +24,7 @@ impl Version {
     }
 
     pub fn is_v0_binary(data: &[u8]) -> bool {
-        data.len() == 34 && data.starts_with(&[0x12,0x20])
+        data.len() == 34 && data.starts_with(&[0x12, 0x20])
     }
 }
 

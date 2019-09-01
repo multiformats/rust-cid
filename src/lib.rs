@@ -1,69 +1,49 @@
 /// ! # cid
 /// !
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
-
-use multihash::Hash;
+use core::{convert::TryFrom, fmt, str::FromStr};
 use integer_encoding::{VarIntReader, VarIntWriter};
-use std::fmt;
+use multibase::Base;
+use multihash::Multihash;
 use std::io::Cursor;
 
-mod to_cid;
-mod error;
 mod codec;
+mod error;
 mod version;
 
-pub use to_cid::ToCid;
-pub use version::Version;
 pub use codec::Codec;
-pub use error::{Error, Result};
+pub use error::Error;
+pub use version::Version;
 
 /// Representation of a CID.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Cid {
     pub version: Version,
     pub codec: Codec,
-    pub hash: Vec<u8>,
-}
-
-/// Prefix represents all metadata of a CID, without the actual content.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Prefix {
-    pub version: Version,
-    pub codec: Codec,
-    pub mh_type: Hash,
-    pub mh_len: usize,
+    pub hash: Multihash,
 }
 
 impl Cid {
     /// Create a new CID.
-    pub fn new(codec: Codec, version: Version, hash: &[u8]) -> Cid {
+    pub fn new(codec: Codec, version: Version, hash: Multihash) -> Cid {
         Cid {
-            version: version,
-            codec: codec,
-            hash: hash.into(),
+            version,
+            codec,
+            hash,
         }
     }
 
-    /// Create a new CID from raw data (binary or multibase encoded string)
-    pub fn from<T: ToCid>(data: T) -> Result<Cid> {
-        data.to_cid()
-    }
-
-    /// Create a new CID from a prefix and some data.
-    pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data).unwrap();
-        hash.truncate(prefix.mh_len + 2);
+    /// Create a new CID from a prefix and a multihash.
+    pub fn new_from_prefix(prefix: &Prefix, hash: Multihash) -> Cid {
         Cid {
             version: prefix.version,
-            codec: prefix.codec.to_owned(),
+            codec: prefix.codec,
             hash: hash,
         }
     }
 
     fn to_string_v0(&self) -> String {
-        use multibase::{encode, Base};
-
-        let mut string = encode(Base::Base58btc, self.hash.as_slice());
+        let mut string = multibase::encode(Base::Base58btc, &self.hash.as_ref());
 
         // Drop the first character as v0 does not know
         // about multibase
@@ -73,9 +53,7 @@ impl Cid {
     }
 
     fn to_string_v1(&self) -> String {
-        use multibase::{encode, Base};
-
-        encode(Base::Base58btc, self.to_bytes().as_slice())
+        multibase::encode(Base::Base58btc, self.to_bytes().as_slice())
     }
 
     pub fn to_string(&self) -> String {
@@ -86,15 +64,14 @@ impl Cid {
     }
 
     fn to_bytes_v0(&self) -> Vec<u8> {
-        self.hash.clone()
+        self.hash.to_bytes()
     }
 
     fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
         res.write_varint(u64::from(self.version)).unwrap();
         res.write_varint(u64::from(self.codec)).unwrap();
-        res.extend_from_slice(&self.hash);
-
+        res.extend_from_slice(&self.hash.as_ref());
         res
     }
 
@@ -106,51 +83,117 @@ impl Cid {
     }
 
     pub fn prefix(&self) -> Prefix {
-        // Unwrap is safe, as this should have been validated on creation
-        let mh = multihash::decode(self.hash.as_slice()).unwrap();
-
         Prefix {
             version: self.version,
-            codec: self.codec.to_owned(),
-            mh_type: mh.alg,
-            mh_len: mh.digest.len(),
+            codec: self.codec,
         }
     }
 }
 
-impl std::hash::Hash for Cid {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.to_bytes().hash(state);
+impl TryFrom<&[u8]> for Cid {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        if Version::is_v0_binary(bytes) {
+            // Verify that hash can be decoded, this is very cheap
+            let hash = multihash::decode(bytes)?;
+
+            Ok(Cid::new(Codec::DagProtobuf, Version::V0, hash))
+        } else {
+            let mut cur = Cursor::new(bytes);
+            let raw_version = cur.read_varint()?;
+            let raw_codec = cur.read_varint()?;
+
+            let version = Version::from(raw_version)?;
+            let codec = Codec::from(raw_codec)?;
+
+            let hash = &bytes[cur.position() as usize..];
+
+            // Verify that hash can be decoded, this is very cheap
+            let hash = multihash::decode(hash)?;
+
+            Ok(Self::new(codec, version, hash))
+        }
+    }
+}
+
+impl TryFrom<Vec<u8>> for Cid {
+    type Error = Error;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        Self::try_from(bytes.as_slice())
+    }
+}
+
+impl TryFrom<&str> for Cid {
+    type Error = Error;
+
+    fn try_from(cid_str: &str) -> Result<Self, Self::Error> {
+        static IPFS_DELIMETER: &'static str = "/ipfs/";
+
+        let hash = match cid_str.find(IPFS_DELIMETER) {
+            Some(index) => &cid_str[index + IPFS_DELIMETER.len()..],
+            _ => cid_str,
+        };
+
+        if hash.len() < 2 {
+            return Err(Error::InputTooShort);
+        }
+
+        let (_, bytes) = if Version::is_v0_str(hash) {
+            // TODO: could avoid the roundtrip here and just use underlying
+            // base-x base58btc decoder here.
+            let hash = Base::Base58btc.code().to_string() + &hash;
+
+            multibase::decode(hash)
+        } else {
+            multibase::decode(hash)
+        }?;
+
+        Self::try_from(bytes)
+    }
+}
+
+impl TryFrom<String> for Cid {
+    type Error = Error;
+
+    fn try_from(cid_str: String) -> Result<Self, Self::Error> {
+        Self::try_from(cid_str.as_str())
+    }
+}
+
+impl FromStr for Cid {
+    type Err = Error;
+
+    fn from_str(cid_str: &str) -> Result<Self, Self::Err> {
+        Cid::try_from(cid_str)
     }
 }
 
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", Cid::to_string(self))
+        write!(f, "{}", Self::to_string(self))
     }
 }
 
+/// Prefix represents all metadata of a CID, without the actual content.
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct Prefix {
+    pub version: Version,
+    pub codec: Codec,
+}
+
 impl Prefix {
-    pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
+    pub fn new_from_bytes(data: &[u8]) -> Result<Prefix, Error> {
         let mut cur = Cursor::new(data);
 
         let raw_version = cur.read_varint()?;
         let raw_codec = cur.read_varint()?;
-        let raw_mh_type: u64 = cur.read_varint()?;
 
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
 
-        let mh_type = Hash::from_code(raw_mh_type as u8)?;
-
-        let mh_len = cur.read_varint()?;
-
-        Ok(Prefix {
-            version: version,
-            codec: codec,
-            mh_type: mh_type,
-            mh_len: mh_len,
-        })
+        Ok(Prefix { version, codec })
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
@@ -159,8 +202,6 @@ impl Prefix {
         // io can't fail on Vec
         res.write_varint(u64::from(self.version)).unwrap();
         res.write_varint(u64::from(self.codec)).unwrap();
-        res.write_varint(self.mh_type.code() as u64).unwrap();
-        res.write_varint(self.mh_len as u64).unwrap();
 
         res
     }

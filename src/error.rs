@@ -1,8 +1,4 @@
-use std::{fmt, error, io};
-use multibase;
-use multihash;
-
-pub type Result<T> = ::std::result::Result<T, Error>;
+use std::{error, fmt, io};
 
 /// Error types
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
