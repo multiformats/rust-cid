@@ -27,7 +27,7 @@ impl Cid {
     /// Create a new CIDv0.
     pub fn new_v0(hash: Multihash) -> Result<Cid, Error> {
         if hash.code() != Code::Sha2_256 {
-            return Err(Error::InvalidCidV0Multihash)
+            return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Cid {
             version: Version::V0,
@@ -48,13 +48,13 @@ impl Cid {
     /// Create a new CID.
     pub fn new(version: Version, codec: Codec, hash: Multihash) -> Result<Cid, Error> {
         match version {
-            Version::V0 =>  {
+            Version::V0 => {
                 if codec != Codec::DagProtobuf {
-                    return Err(Error::InvalidCidV0Codec)
+                    return Err(Error::InvalidCidV0Codec);
                 }
                 Self::new_v0(hash)
-            },
-            Version::V1 => Ok(Self::new_v1(codec, hash))
+            }
+            Version::V1 => Ok(Self::new_v1(codec, hash)),
         }
     }
 

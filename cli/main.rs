@@ -2,8 +2,8 @@ use async_std::{
     io::{self, Read},
     task,
 };
-use core::{convert::TryFrom, fmt, str::FromStr};
 use cid::Cid;
+use core::{convert::TryFrom, fmt, str::FromStr};
 use exitfailure::ExitFailure;
 use failure::{format_err, Error};
 use multibase::Base;
