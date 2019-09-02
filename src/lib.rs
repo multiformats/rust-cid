@@ -60,12 +60,12 @@ impl Cid {
 
     /// Returns the cid version.
     pub fn version(&self) -> Version {
-        self.version.clone()
+        self.version
     }
 
     /// Returns the cid codec.
     pub fn codec(&self) -> Codec {
-        self.codec.clone()
+        self.codec
     }
 
     /// Returns the cid multihash.
@@ -167,7 +167,7 @@ impl TryFrom<&str> for Cid {
     type Error = Error;
 
     fn try_from(cid_str: &str) -> Result<Self, Self::Error> {
-        static IPFS_DELIMETER: &'static str = "/ipfs/";
+        static IPFS_DELIMETER: &str = "/ipfs/";
 
         let hash = match cid_str.find(IPFS_DELIMETER) {
             Some(index) => &cid_str[index + IPFS_DELIMETER.len()..],
@@ -181,7 +181,7 @@ impl TryFrom<&str> for Cid {
         let (_, bytes) = if Version::is_v0_str(hash) {
             // TODO: could avoid the roundtrip here and just use underlying
             // base-x base58btc decoder here.
-            let hash = Base::Base58btc.code().to_string() + &hash;
+            let hash = Base::Base58btc.code().to_string() + hash;
 
             multibase::decode(hash)
         } else {
