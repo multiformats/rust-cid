@@ -7,7 +7,7 @@ use cid::Cid;
 use exitfailure::ExitFailure;
 use failure::{format_err, Error};
 use multibase::Base;
-use multihash::Multihash;
+use multihash::{Code, Multihash};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -21,7 +21,7 @@ struct Opts {
 enum Mode {
     #[structopt(name = "encode")]
     Encode {
-        #[structopt(short = "v", long = "version", default_value = "v0")]
+        #[structopt(short = "v", long = "version", default_value = "auto")]
         version: Version,
         #[structopt(short = "c", long = "codec", default_value = "dag-pb")]
         codec: Codec,
@@ -42,13 +42,18 @@ fn main() -> Result<(), ExitFailure> {
 }
 
 #[derive(Debug)]
-struct Version(cid::Version);
+enum Version {
+    V0,
+    V1,
+    Auto,
+}
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let version_str = match self.0 {
-            cid::Version::V0 => "v0",
-            cid::Version::V1 => "v1",
+        let version_str = match self {
+            Version::Auto => "auto",
+            Version::V0 => "v0",
+            Version::V1 => "v1",
         };
         write!(f, "{}", version_str)
     }
@@ -58,12 +63,37 @@ impl FromStr for Version {
     type Err = Error;
 
     fn from_str(version_str: &str) -> Result<Self, Self::Err> {
-        let version = match version_str {
-            "v0" => Ok(cid::Version::V0),
-            "v1" => Ok(cid::Version::V1),
+        match version_str {
+            "auto" => Ok(Version::Auto),
+            "v0" => Ok(Version::V0),
+            "v1" => Ok(Version::V1),
             _ => Err(format_err!("Unknown version {:?}", version_str)),
-        };
-        version.map(Self)
+        }
+    }
+}
+
+impl From<cid::Version> for Version {
+    fn from(version: cid::Version) -> Self {
+        match version {
+            cid::Version::V0 => Version::V0,
+            cid::Version::V1 => Version::V1,
+        }
+    }
+}
+
+impl Version {
+    fn to_version(&self, codec: cid::Codec, hash: &Multihash) -> cid::Version {
+        match self {
+            Version::V0 => cid::Version::V0,
+            Version::V1 => cid::Version::V1,
+            Version::Auto => {
+                if codec == cid::Codec::DagProtobuf && hash.code() == Code::Sha2_256 {
+                    cid::Version::V0
+                } else {
+                    cid::Version::V1
+                }
+            }
+        }
     }
 }
 
@@ -132,7 +162,9 @@ async fn encode(version: Version, codec: Codec) -> Result<(), ExitFailure> {
     let mut buffer = Vec::new();
     stdin.read_to_end(&mut buffer).await?;
     let hash = Multihash::from_bytes(buffer)?;
-    let cid = Cid::new(codec.0, version.0, hash);
+    let codec = codec.0;
+    let version = version.to_version(codec, &hash);
+    let cid = Cid::new(version, codec, hash)?;
     print!("{}", cid);
     Ok(())
 }
@@ -142,8 +174,8 @@ async fn decode() -> Result<(), ExitFailure> {
     let mut buffer = String::new();
     stdin.read_to_string(&mut buffer).await?;
     let cid = Cid::try_from(buffer)?;
-    println!("version: {}", Version(cid.version));
-    println!("codec: {}", Codec(cid.codec));
-    println!("hash: {}", multibase::encode(Base::Base58btc, &cid.hash.as_ref()));
+    println!("version: {}", Version::from(cid.version()));
+    println!("codec: {}", Codec(cid.codec()));
+    println!("hash: {}", multibase::encode(Base::Base58btc, &cid.hash()));
     Ok(())
 }
