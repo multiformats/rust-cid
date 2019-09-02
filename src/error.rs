@@ -7,6 +7,8 @@ pub enum Error {
     InputTooShort,
     ParsingError,
     InvalidCidVersion,
+    InvalidCidV0Codec,
+    InvalidCidV0Multihash,
 }
 
 impl fmt::Display for Error {
@@ -24,6 +26,8 @@ impl error::Error for Error {
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
+            InvalidCidV0Codec => "CIDv0 requires a dag-pb codec",
+            InvalidCidV0Multihash => "CIDv0 requires a sha2-256 multihash",
         }
     }
 }

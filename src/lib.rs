@@ -4,7 +4,7 @@
 use core::{convert::TryFrom, fmt, str::FromStr};
 use integer_encoding::{VarIntReader, VarIntWriter};
 use multibase::Base;
-use multihash::Multihash;
+use multihash::{Code, Multihash, MultihashRef};
 use std::io::Cursor;
 
 mod codec;
@@ -18,28 +18,59 @@ pub use version::Version;
 /// Representation of a CID.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Cid {
-    pub version: Version,
-    pub codec: Codec,
-    pub hash: Multihash,
+    version: Version,
+    codec: Codec,
+    hash: Multihash,
 }
 
 impl Cid {
-    /// Create a new CID.
-    pub fn new(codec: Codec, version: Version, hash: Multihash) -> Cid {
+    /// Create a new CIDv0.
+    pub fn new_v0(hash: Multihash) -> Result<Cid, Error> {
+        if hash.code() != Code::Sha2_256 {
+            return Err(Error::InvalidCidV0Multihash)
+        }
+        Ok(Cid {
+            version: Version::V0,
+            codec: Codec::DagProtobuf,
+            hash,
+        })
+    }
+
+    /// Create a new CIDv1.
+    pub fn new_v1(codec: Codec, hash: Multihash) -> Cid {
         Cid {
-            version,
+            version: Version::V1,
             codec,
             hash,
         }
     }
 
-    /// Create a new CID from a prefix and a multihash.
-    pub fn new_from_prefix(prefix: &Prefix, hash: Multihash) -> Cid {
-        Cid {
-            version: prefix.version,
-            codec: prefix.codec,
-            hash: hash,
+    /// Create a new CID.
+    pub fn new(version: Version, codec: Codec, hash: Multihash) -> Result<Cid, Error> {
+        match version {
+            Version::V0 =>  {
+                if codec != Codec::DagProtobuf {
+                    return Err(Error::InvalidCidV0Codec)
+                }
+                Self::new_v0(hash)
+            },
+            Version::V1 => Ok(Self::new_v1(codec, hash))
         }
+    }
+
+    /// Returns the cid version.
+    pub fn version(&self) -> Version {
+        self.version.clone()
+    }
+
+    /// Returns the cid codec.
+    pub fn codec(&self) -> Codec {
+        self.codec.clone()
+    }
+
+    /// Returns the cid multihash.
+    pub fn hash(&self) -> MultihashRef {
+        self.hash.as_ref()
     }
 
     fn to_string_v0(&self) -> String {
@@ -56,6 +87,7 @@ impl Cid {
         multibase::encode(Base::Base58btc, self.to_bytes().as_slice())
     }
 
+    /// Returns the string representation.
     pub fn to_string(&self) -> String {
         match self.version {
             Version::V0 => self.to_string_v0(),
@@ -75,18 +107,24 @@ impl Cid {
         res
     }
 
+    /// Returns the bytes representation.
     pub fn to_bytes(&self) -> Vec<u8> {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
         }
     }
+}
 
-    pub fn prefix(&self) -> Prefix {
-        Prefix {
-            version: self.version,
-            codec: self.codec,
-        }
+impl From<Cid> for Vec<u8> {
+    fn from(cid: Cid) -> Self {
+        cid.to_bytes()
+    }
+}
+
+impl From<Cid> for String {
+    fn from(cid: Cid) -> Self {
+        cid.to_string()
     }
 }
 
@@ -98,7 +136,7 @@ impl TryFrom<&[u8]> for Cid {
             // Verify that hash can be decoded, this is very cheap
             let hash = multihash::decode(bytes)?;
 
-            Ok(Cid::new(Codec::DagProtobuf, Version::V0, hash))
+            Self::new_v0(hash)
         } else {
             let mut cur = Cursor::new(bytes);
             let raw_version = cur.read_varint()?;
@@ -112,7 +150,7 @@ impl TryFrom<&[u8]> for Cid {
             // Verify that hash can be decoded, this is very cheap
             let hash = multihash::decode(hash)?;
 
-            Ok(Self::new(codec, version, hash))
+            Self::new(version, codec, hash)
         }
     }
 }
@@ -173,36 +211,5 @@ impl FromStr for Cid {
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", Self::to_string(self))
-    }
-}
-
-/// Prefix represents all metadata of a CID, without the actual content.
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Prefix {
-    pub version: Version,
-    pub codec: Codec,
-}
-
-impl Prefix {
-    pub fn new_from_bytes(data: &[u8]) -> Result<Prefix, Error> {
-        let mut cur = Cursor::new(data);
-
-        let raw_version = cur.read_varint()?;
-        let raw_codec = cur.read_varint()?;
-
-        let version = Version::from(raw_version)?;
-        let codec = Codec::from(raw_codec)?;
-
-        Ok(Prefix { version, codec })
-    }
-
-    pub fn as_bytes(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(4);
-
-        // io can't fail on Vec
-        res.write_varint(u64::from(self.version)).unwrap();
-        res.write_varint(u64::from(self.codec)).unwrap();
-
-        res
     }
 }
