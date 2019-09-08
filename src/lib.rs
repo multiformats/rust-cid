@@ -116,6 +116,12 @@ impl Cid {
     }
 }
 
+impl From<&Cid> for Cid {
+    fn from(cid: &Cid) -> Self {
+        cid.to_owned()
+    }
+}
+
 impl From<Cid> for Vec<u8> {
     fn from(cid: Cid) -> Self {
         cid.to_bytes()
