@@ -16,7 +16,7 @@ pub use error::Error;
 pub use version::Version;
 
 /// Representation of a CID.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Hash)]
 pub struct Cid {
     version: Version,
     codec: Codec,
@@ -113,6 +113,20 @@ impl Cid {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
         }
+    }
+
+    #[cfg(feature = "random")]
+    /// Generates a random `Cid` with the passed `Rng`.
+    pub fn random_with_rng<R: rand::Rng + ?Sized>(rng: &mut R) -> Self {
+        use multihash::MultihashDigest;
+        Self::new_v0(multihash::Sha2_256::random(rng)).unwrap()
+    }
+
+    #[cfg(feature = "random")]
+    /// Generates a random `Cid`.
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        Self::random_with_rng(&mut rng)
     }
 }
 

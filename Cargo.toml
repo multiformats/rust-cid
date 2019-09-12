@@ -18,8 +18,13 @@ no-dev-version = true
 
 [dependencies]
 multihash = { git = "https://github.com/dvc94ch/rust-multihash", branch = "cli" }
-multibase = "~0.6.0"
-integer-encoding = "~1.0.3"
+multibase = { git = "https://github.com/multiformats/rust-multibase" }
+integer-encoding = "1.0"
+rand = { version = "0.7", optional = true }
+
+[features]
+default = ["random"]
+random = ["rand"]
 
 [workspace]
 members = ["cli"]

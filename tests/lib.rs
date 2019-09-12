@@ -1,7 +1,6 @@
 use cid::{Cid, Codec, Error, Version};
 use core::convert::TryFrom;
 use multihash::{MultihashDigest, Sha2_256};
-use std::collections::HashMap;
 
 #[test]
 fn basic_marshalling() {
@@ -68,12 +67,10 @@ fn from() {
     }
 }
 
+#[cfg(feature = "random")]
 #[test]
-fn test_hash() {
-    let data: Vec<u8> = vec![1, 2, 3];
-    let hash = Sha2_256::digest(&data);
-    let mut map = HashMap::new();
-    let cid = Cid::new_v0(hash).unwrap();
-    map.insert(cid.clone(), data.clone());
-    assert_eq!(&data, map.get(&cid).unwrap());
+fn test_random() {
+    let cid = Cid::random();
+    let cid2 = Cid::try_from(cid.to_bytes()).unwrap();
+    assert_eq!(cid, cid2);
 }
