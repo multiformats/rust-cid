@@ -1,7 +1,7 @@
 /// ! # cid
 /// !
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
-use core::{convert::TryFrom, fmt, str::FromStr};
+use core::{convert::TryFrom, fmt, hash::{Hash, Hasher}, str::FromStr};
 use integer_encoding::{VarIntReader, VarIntWriter};
 use multibase::Base;
 use multihash::{Code, Multihash, MultihashRef};
@@ -16,7 +16,7 @@ pub use error::Error;
 pub use version::Version;
 
 /// Representation of a CID.
-#[derive(Clone, Debug, PartialEq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Cid {
     version: Version,
     codec: Codec,
@@ -231,5 +231,14 @@ impl FromStr for Cid {
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", Self::to_string(self))
+    }
+}
+
+impl Hash for Cid {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let mut hash_bytes = [0u8; 8];
+        let cid_bytes = self.hash().to_bytes();
+        hash_bytes.copy_from_slice(&cid_bytes[1..9]);
+        state.write_u64(u64::from_ne_bytes(hash_bytes));
     }
 }
