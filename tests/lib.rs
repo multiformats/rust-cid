@@ -1,6 +1,3 @@
-extern crate cid;
-extern crate multihash;
-
 use cid::{Cid, Version, Codec, Error, Prefix};
 use std::collections::HashMap;
 

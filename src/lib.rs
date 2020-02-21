@@ -1,11 +1,6 @@
 /// ! # cid
 /// !
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
-
-extern crate multihash;
-extern crate multibase;
-extern crate integer_encoding;
-
 mod to_cid;
 mod error;
 mod codec;
