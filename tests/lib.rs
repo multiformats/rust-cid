@@ -1,4 +1,4 @@
-use cid::{Cid, Version, Codec, Error, Prefix};
+use cid::{Cid, Codec, Error, Prefix, Version};
 use std::collections::HashMap;
 
 #[test]
@@ -34,7 +34,9 @@ fn v0_handling() {
 
 #[test]
 fn from_str() {
-    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n".parse().unwrap();
+    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n"
+        .parse()
+        .unwrap();
     assert_eq!(cid.version, Version::V0);
 
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII".parse::<Cid>();

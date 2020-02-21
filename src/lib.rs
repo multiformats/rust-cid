@@ -1,15 +1,15 @@
+mod codec;
+mod error;
 /// ! # cid
 /// !
 /// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 mod to_cid;
-mod error;
-mod codec;
 mod version;
 
-pub use to_cid::ToCid;
-pub use version::Version;
 pub use codec::Codec;
 pub use error::{Error, Result};
+pub use to_cid::ToCid;
+pub use version::Version;
 
 use integer_encoding::{VarIntReader, VarIntWriter};
 use std::fmt;

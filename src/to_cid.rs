@@ -1,10 +1,10 @@
-use std::io::Cursor;
-use std::str::FromStr;
+use integer_encoding::VarIntReader;
 use multibase;
 use multihash;
-use integer_encoding::VarIntReader;
+use std::io::Cursor;
+use std::str::FromStr;
 
-use crate::{Cid, Version, Codec, Error, Result};
+use crate::{Cid, Codec, Error, Result, Version};
 
 pub trait ToCid {
     fn to_cid(&self) -> Result<Cid>;
@@ -39,7 +39,7 @@ impl ToCid for str {
 
         let hash = match self.find(IPFS_DELIMETER) {
             Some(index) => &self[index + IPFS_DELIMETER.len()..],
-            _ => self
+            _ => self,
         };
 
         if hash.len() < 2 {
@@ -59,7 +59,6 @@ impl ToCid for str {
         decoded.to_cid()
     }
 }
-
 
 impl FromStr for Cid {
     type Err = Error;
