@@ -36,8 +36,8 @@ impl Cid {
     /// Create a new CID.
     pub fn new(codec: Codec, version: Version, hash: &[u8]) -> Cid {
         Cid {
-            version: version,
-            codec: codec,
+            version,
+            codec,
             hash: hash.into(),
         }
     }
@@ -54,7 +54,7 @@ impl Cid {
         Cid {
             version: prefix.version,
             codec: prefix.codec.to_owned(),
-            hash: hash,
+            hash,
         }
     }
 
@@ -144,10 +144,10 @@ impl Prefix {
         let mh_len = cur.read_varint()?;
 
         Ok(Prefix {
-            version: version,
-            codec: codec,
-            mh_type: mh_type,
-            mh_len: mh_len,
+            version,
+            codec,
+            mh_type,
+            mh_len,
         })
     }
 

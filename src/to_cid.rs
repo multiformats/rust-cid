@@ -35,7 +35,7 @@ impl<'a> ToCid for &'a str {
 
 impl ToCid for str {
     fn to_cid(&self) -> Result<Cid> {
-        static IPFS_DELIMETER: &'static str = "/ipfs/";
+        static IPFS_DELIMETER: &str = "/ipfs/";
 
         let hash = match self.find(IPFS_DELIMETER) {
             Some(index) => &self[index + IPFS_DELIMETER.len()..],
