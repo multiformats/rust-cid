@@ -1,6 +1,6 @@
-use std::{fmt, error, io};
 use multibase;
 use multihash;
+use std::{error, fmt, io};
 
 pub type Result<T> = ::std::result::Result<T, Error>;
 
