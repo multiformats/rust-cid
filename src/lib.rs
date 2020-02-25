@@ -50,7 +50,9 @@ impl Cid {
 
     /// Create a new CID from a prefix and some data.
     pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data).unwrap().into_bytes();
+        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data)
+            .unwrap()
+            .into_bytes();
         hash.truncate(prefix.mh_len + 2);
         Cid {
             version: prefix.version,
@@ -142,7 +144,7 @@ impl Prefix {
 
         let mh_type = match multihash::Hash::from_code(raw_mh_type as u16) {
             Some(hash) => Ok(hash),
-            None => Err(Error::UnknownCodec)
+            None => Err(Error::UnknownCodec),
         }?;
 
         let mh_len = cur.read_varint()?;
