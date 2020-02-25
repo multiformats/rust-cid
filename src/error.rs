@@ -1,4 +1,4 @@
-use std::{fmt, error, io};
+use std::{fmt, io};
 use multibase;
 use multihash;
 
@@ -15,22 +15,18 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
-    }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
         use self::Error::*;
-
-        match *self {
+        let error = match *self {
             UnknownCodec => "Unknown codec",
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
-        }
+        };
+
+        f.write_str(error)
     }
 }
+
 
 impl From<io::Error> for Error {
     fn from(_: io::Error) -> Error {
