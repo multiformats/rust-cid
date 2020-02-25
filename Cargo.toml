@@ -1,6 +1,6 @@
 [package]
 name = "cid"
-version = "0.3.0"
+version = "0.3.1"
 description = "CID in rust"
 homepage = "https://github.com/multiformats/rust-cid"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
@@ -11,12 +11,14 @@ license = "MIT"
 
 readme = "README.md"
 
-[dependencies]
-multihash = "~0.8.0"
-multibase = "~0.6.0"
-integer-encoding = "~1.0.3"
+edition = "2018"
 
 [package.metadata.release]
 upload-doc = true
 pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
+
+[dependencies]
+multihash = "~0.9.4"
+multibase = "~0.8.0"
+integer-encoding = "~1.0.3"

@@ -32,9 +32,6 @@ Then run `cargo build`.
 ## Usage
 
 ```rust
-extern crate cid;
-extern crate multihash;
-
 use multihash::Hash;
 use cid::{Cid, Codec, Version};
 let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();

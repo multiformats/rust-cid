@@ -1,11 +1,10 @@
-extern crate cid;
-extern crate multihash;
-
-use cid::{Cid, Version, Codec, Error, Prefix};
+use cid::{Cid, Codec, Error, Prefix, Version};
+use std::collections::HashMap;
+use std::str::FromStr;
 
 #[test]
 fn basic_marshalling() {
-    let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();
+    let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap().into_bytes();
 
     let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
@@ -35,6 +34,17 @@ fn v0_handling() {
 }
 
 #[test]
+fn from_str() {
+    let cid: Cid = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n"
+        .parse()
+        .unwrap();
+    assert_eq!(cid.version, Version::V0);
+
+    let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII".parse::<Cid>();
+    assert_eq!(bad, Err(Error::ParsingError));
+}
+
+#[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
     assert_eq!(Cid::from(bad), Err(Error::ParsingError));
@@ -43,7 +53,7 @@ fn v0_error() {
 #[test]
 fn prefix_roundtrip() {
     let data = b"awesome test content";
-    let h = multihash::encode(multihash::Hash::SHA2256, data).unwrap();
+    let h = multihash::encode(multihash::Hash::SHA2256, data).unwrap().into_bytes();
 
     let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
     let prefix = cid.prefix();
@@ -73,4 +83,28 @@ fn from() {
         assert_eq!(cid.version, Version::V0);
         assert_eq!(cid.to_string(), the_hash);
     }
+}
+
+#[test]
+fn test_hash() {
+    let data: Vec<u8> = vec![1, 2, 3];
+    let prefix = Prefix {
+        version: Version::V0,
+        codec: Codec::DagProtobuf,
+        mh_type: multihash::Hash::SHA2256,
+        mh_len: 32,
+    };
+    let mut map = HashMap::new();
+    let cid = Cid::new_from_prefix(&prefix, &data);
+    map.insert(cid.clone(), data.clone());
+    assert_eq!(&data, map.get(&cid).unwrap());
+}
+
+
+#[test]
+fn test_base32() {
+    let cid = Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
+    assert_eq!(cid.version, Version::V1);
+    assert_eq!(cid.codec, Codec::Raw);
+    assert_eq!(cid.hash, multihash::encode(multihash::Hash::SHA2256, b"foo").unwrap().into_bytes());
 }

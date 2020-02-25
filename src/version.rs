@@ -1,4 +1,4 @@
-use {Error, Result};
+use crate::{Error, Result};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Version {
@@ -13,18 +13,18 @@ impl Version {
         match raw {
             0 => Ok(V0),
             1 => Ok(V1),
-            _ => Err(Error::InvalidCidVersion)
+            _ => Err(Error::InvalidCidVersion),
         }
     }
 
     pub fn is_v0_str(data: &str) -> bool {
-        // v0 is a base58btc encoded sha hash, so it has
+        // v0 is a Base58Btc encoded sha hash, so it has
         // fixed length and always begins with "Qm"
         data.len() == 46 && data.starts_with("Qm")
     }
 
     pub fn is_v0_binary(data: &[u8]) -> bool {
-        data.len() == 34 && data.starts_with(&[0x12,0x20])
+        data.len() == 34 && data.starts_with(&[0x12, 0x20])
     }
 }
 
