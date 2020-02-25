@@ -29,7 +29,7 @@ pub struct Cid {
 pub struct Prefix {
     pub version: Version,
     pub codec: Codec,
-    pub mh_type: multihash::Hash,
+    pub mh_type: multihash::Code,
     pub mh_len: usize,
 }
 
@@ -50,9 +50,7 @@ impl Cid {
 
     /// Create a new CID from a prefix and some data.
     pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data)
-            .unwrap()
-            .into_bytes();
+        let mut hash = prefix.mh_type.hasher().unwrap().digest(data).into_bytes();
         hash.truncate(prefix.mh_len + 2);
         Cid {
             version: prefix.version,
@@ -142,9 +140,9 @@ impl Prefix {
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
 
-        let mh_type = match multihash::Hash::from_code(raw_mh_type as u16) {
-            Some(hash) => Ok(hash),
-            None => Err(Error::UnknownCodec),
+        let mh_type = match multihash::Code::from_u64(raw_mh_type) {
+            multihash::Code::Custom(_) => Err(Error::UnknownCodec),
+            code => Ok(code),
         }?;
 
         let mh_len = cur.read_varint()?;
@@ -163,7 +161,7 @@ impl Prefix {
         // io can't fail on Vec
         res.write_varint(u64::from(self.version)).unwrap();
         res.write_varint(u64::from(self.codec)).unwrap();
-        res.write_varint(self.mh_type.code() as u64).unwrap();
+        res.write_varint(self.mh_type.to_u64()).unwrap();
         res.write_varint(self.mh_len as u64).unwrap();
 
         res

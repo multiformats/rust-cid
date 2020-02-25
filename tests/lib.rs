@@ -1,12 +1,11 @@
 use cid::{Cid, Codec, Error, Prefix, Version};
+use multihash::Sha2_256;
 use std::collections::HashMap;
 use std::str::FromStr;
 
 #[test]
 fn basic_marshalling() {
-    let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop")
-        .unwrap()
-        .into_bytes();
+    let h = Sha2_256::digest(b"beep boop").into_bytes();
 
     let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
@@ -55,9 +54,7 @@ fn v0_error() {
 #[test]
 fn prefix_roundtrip() {
     let data = b"awesome test content";
-    let h = multihash::encode(multihash::Hash::SHA2256, data)
-        .unwrap()
-        .into_bytes();
+    let h = Sha2_256::digest(data).into_bytes();
 
     let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
     let prefix = cid.prefix();
@@ -95,7 +92,7 @@ fn test_hash() {
     let prefix = Prefix {
         version: Version::V0,
         codec: Codec::DagProtobuf,
-        mh_type: multihash::Hash::SHA2256,
+        mh_type: multihash::Code::Sha2_256,
         mh_len: 32,
     };
     let mut map = HashMap::new();
@@ -109,10 +106,5 @@ fn test_base32() {
     let cid = Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
     assert_eq!(cid.version, Version::V1);
     assert_eq!(cid.codec, Codec::Raw);
-    assert_eq!(
-        cid.hash,
-        multihash::encode(multihash::Hash::SHA2256, b"foo")
-            .unwrap()
-            .into_bytes()
-    );
+    assert_eq!(cid.hash, Sha2_256::digest(b"foo").into_bytes());
 }
