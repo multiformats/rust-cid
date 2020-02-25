@@ -1,6 +1,6 @@
 use integer_encoding::VarIntReader;
 use multibase;
-use multihash;
+use multihash::{self, Multihash};
 use std::io::Cursor;
 use std::str::FromStr;
 
@@ -48,12 +48,14 @@ impl ToCid for str {
 
         let (_, decoded) = if Version::is_v0_str(hash) {
             // TODO: could avoid the roundtrip here and just use underlying
-            // base-x base58btc decoder here.
-            let hash = multibase::Base::Base58btc.code().to_string() + &hash;
+            // base-x Base58Btc decoder here.
+            let hash = multibase::Base::Base58Btc.code().to_string() + &hash;
 
             multibase::decode(hash)
         } else {
-            multibase::decode(hash)
+            let mb = multibase::decode(hash);
+
+            mb
         }?;
 
         decoded.to_cid()
@@ -63,7 +65,8 @@ impl ToCid for str {
 impl FromStr for Cid {
     type Err = Error;
     fn from_str(src: &str) -> Result<Self> {
-        src.to_cid()
+        let res = src.to_cid();
+        res
     }
 }
 
@@ -79,8 +82,7 @@ impl ToCid for [u8] {
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
             // Verify that hash can be decoded, this is very cheap
-            multihash::decode(self)?;
-
+            let _mh = Multihash::from_bytes(Vec::from(self))?;
             Ok(Cid::new(Codec::DagProtobuf, Version::V0, self))
         } else {
             let mut cur = Cursor::new(self);
@@ -93,7 +95,7 @@ impl ToCid for [u8] {
             let hash = &self[cur.position() as usize..];
 
             // Verify that hash can be decoded, this is very cheap
-            multihash::decode(hash)?;
+            let _mh = Multihash::from_bytes(Vec::from(hash))?;
 
             Ok(Cid::new(codec, version, hash))
         }

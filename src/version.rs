@@ -18,7 +18,7 @@ impl Version {
     }
 
     pub fn is_v0_str(data: &str) -> bool {
-        // v0 is a base58btc encoded sha hash, so it has
+        // v0 is a Base58Btc encoded sha hash, so it has
         // fixed length and always begins with "Qm"
         data.len() == 46 && data.starts_with("Qm")
     }

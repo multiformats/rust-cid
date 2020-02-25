@@ -19,6 +19,6 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [dependencies]
-multihash = "~0.8.0"
-multibase = "~0.6.0"
+multihash = "~0.9.4"
+multibase = "~0.8.0"
 integer-encoding = "~1.0.3"
