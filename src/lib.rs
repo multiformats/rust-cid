@@ -12,6 +12,7 @@ pub use to_cid::ToCid;
 pub use version::Version;
 
 use integer_encoding::{VarIntReader, VarIntWriter};
+use multihash::Multihash;
 use std::fmt;
 use std::io::Cursor;
 
@@ -49,7 +50,7 @@ impl Cid {
 
     /// Create a new CID from a prefix and some data.
     pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data).unwrap();
+        let mut hash = multihash::encode(prefix.mh_type.to_owned(), data).unwrap().into_bytes();
         hash.truncate(prefix.mh_len + 2);
         Cid {
             version: prefix.version,
@@ -61,7 +62,7 @@ impl Cid {
     fn to_string_v0(&self) -> String {
         use multibase::{encode, Base};
 
-        let mut string = encode(Base::Base58btc, self.hash.as_slice());
+        let mut string = encode(Base::Base58Btc, self.hash.as_slice());
 
         // Drop the first character as v0 does not know
         // about multibase
@@ -73,7 +74,7 @@ impl Cid {
     fn to_string_v1(&self) -> String {
         use multibase::{encode, Base};
 
-        encode(Base::Base58btc, self.to_bytes().as_slice())
+        encode(Base::Base58Btc, self.to_bytes().as_slice())
     }
 
     pub fn to_string(&self) -> String {
@@ -105,13 +106,13 @@ impl Cid {
 
     pub fn prefix(&self) -> Prefix {
         // Unwrap is safe, as this should have been validated on creation
-        let mh = multihash::decode(self.hash.as_slice()).unwrap();
+        let mh = Multihash::from_bytes(Vec::from(self.hash.as_slice())).unwrap();
 
         Prefix {
             version: self.version,
             codec: self.codec.to_owned(),
-            mh_type: mh.alg,
-            mh_len: mh.digest.len(),
+            mh_type: mh.algorithm(),
+            mh_len: mh.digest().len(),
         }
     }
 }
@@ -139,7 +140,10 @@ impl Prefix {
         let version = Version::from(raw_version)?;
         let codec = Codec::from(raw_codec)?;
 
-        let mh_type = multihash::Hash::from_code(raw_mh_type as u8)?;
+        let mh_type = match multihash::Hash::from_code(raw_mh_type as u16) {
+            Some(hash) => Ok(hash),
+            None => Err(Error::UnknownCodec)
+        }?;
 
         let mh_len = cur.read_varint()?;
 
