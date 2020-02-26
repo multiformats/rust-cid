@@ -25,6 +25,7 @@ First add this to your `Cargo.toml`
 ```toml
 [dependencies]
 cid = "*"
+multihash = "*"
 ```
 
 Then run `cargo build`.
@@ -32,16 +33,19 @@ Then run `cargo build`.
 ## Usage
 
 ```rust
-use multihash::Hash;
 use cid::{Cid, Codec, Version};
-let h = multihash::encode(multihash::Hash::SHA2256, b"beep boop").unwrap();
+use multihash;
 
-let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+fn main() {
+    let h = multihash::Sha2_256::digest(b"beep boop");
 
-let data = cid.to_bytes();
-let out = Cid::from(data).unwrap();
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
 
-assert_eq!(cid, out);
+    let data = cid.to_bytes();
+    let out = Cid::from(data).unwrap();
+
+    assert_eq!(cid, out);
+}
 ```
 ## Maintainers
 
