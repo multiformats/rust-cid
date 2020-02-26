@@ -1,5 +1,3 @@
-use multibase;
-use multihash;
 use std::{fmt, io};
 
 pub type Result<T> = ::std::result::Result<T, Error>;
