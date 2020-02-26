@@ -77,13 +77,6 @@ impl Cid {
         encode(Base::Base58Btc, self.to_bytes().as_slice())
     }
 
-    pub fn to_string(&self) -> String {
-        match self.version {
-            Version::V0 => self.to_string_v0(),
-            Version::V1 => self.to_string_v1(),
-        }
-    }
-
     fn to_bytes_v0(&self) -> Vec<u8> {
         self.hash.clone()
     }
@@ -117,6 +110,7 @@ impl Cid {
     }
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
 impl std::hash::Hash for Cid {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.to_bytes().hash(state);
@@ -125,7 +119,11 @@ impl std::hash::Hash for Cid {
 
 impl fmt::Display for Cid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", Cid::to_string(self))
+        let output = match self.version {
+            Version::V0 => self.to_string_v0(),
+            Version::V1 => self.to_string_v1(),
+        };
+        write!(f, "{}", output)
     }
 }
 
