@@ -7,7 +7,7 @@ authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
 
 keywords = ["ipld", "ipfs", "cid", "multihash", "multiformats"]
 
-license = "MIT"
+license = "MIT OR Apache-2.0"
 
 readme = "README.md"
 
