@@ -1,20 +1,16 @@
-use integer_encoding::VarIntReader;
-use multihash::{self, Multihash};
-use std::io::Cursor;
-use std::str::FromStr;
+use multibase::Base;
+use multihash::MultihashRef;
+use unsigned_varint::decode as varint_decode;
 
-use crate::{Cid, Codec, Error, Result, Version};
+use crate::cid::Cid;
+use crate::codec::Codec;
+use crate::error::{Error, Result};
+use crate::version::Version;
 
+/// A trait for converting data into CID format.
 pub trait ToCid {
+    /// The only method for converting data into CID format in the `ToCid` trait.
     fn to_cid(&self) -> Result<Cid>;
-}
-
-impl ToCid for Vec<u8> {
-    /// Create a Cid from a byte vector.
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        self.as_slice().to_cid()
-    }
 }
 
 impl ToCid for String {
@@ -45,24 +41,21 @@ impl ToCid for str {
             return Err(Error::InputTooShort);
         }
 
-        let (_, decoded) = if Version::is_v0_str(hash) {
-            // TODO: could avoid the roundtrip here and just use underlying
-            // base-x Base58Btc decoder here.
-            let hash = multibase::Base::Base58Btc.code().to_string() + hash;
-
-            multibase::decode(hash)
+        if Version::is_v0_str(hash) {
+            let decoded = Base::Base58Btc.decode(hash)?;
+            decoded.to_cid()
         } else {
-            multibase::decode(hash)
-        }?;
-
-        decoded.to_cid()
+            let (_, decoded) = multibase::decode(hash)?;
+            decoded.to_cid()
+        }
     }
 }
 
-impl FromStr for Cid {
-    type Err = Error;
-    fn from_str(src: &str) -> Result<Self> {
-        src.to_cid()
+impl ToCid for Vec<u8> {
+    /// Create a Cid from a byte vector.
+    #[inline]
+    fn to_cid(&self) -> Result<Cid> {
+        self.as_slice().to_cid()
     }
 }
 
@@ -78,22 +71,19 @@ impl ToCid for [u8] {
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
             // Verify that hash can be decoded, this is very cheap
-            let _mh = Multihash::from_bytes(Vec::from(self))?;
-            Ok(Cid::new(Codec::DagProtobuf, Version::V0, self))
-        } else {
-            let mut cur = Cursor::new(self);
-            let raw_version = cur.read_varint()?;
-            let raw_codec = cur.read_varint()?;
+            let _hash = MultihashRef::from_slice(self)?;
 
+            Ok(Cid::new(Version::V0, Codec::DagProtobuf, self))
+        } else {
+            let (raw_version, remain) = varint_decode::u64(&self)?;
             let version = Version::from(raw_version)?;
+            let (raw_codec, hash) = varint_decode::u64(&remain)?;
             let codec = Codec::from(raw_codec)?;
 
-            let hash = &self[cur.position() as usize..];
-
             // Verify that hash can be decoded, this is very cheap
-            let _mh = Multihash::from_bytes(Vec::from(hash))?;
+            let _hash = MultihashRef::from_slice(hash)?;
 
-            Ok(Cid::new(codec, version, hash))
+            Ok(Cid::new(version, codec, hash))
         }
     }
 }

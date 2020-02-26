@@ -16,4 +16,4 @@ no-dev-version = true
 [dependencies]
 multihash = "0.10"
 multibase = "0.8.0"
-integer-encoding = "1.0.3"
+unsigned-varint = "0.3"
