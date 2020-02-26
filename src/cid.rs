@@ -52,7 +52,7 @@ impl Cid {
     }
 
     fn to_string_v1(&self) -> String {
-        multibase::encode(Base::Base58Btc, self.to_bytes())
+        multibase::encode(Base::Base32Lower, self.to_bytes())
     }
 
     fn to_bytes_v0(&self) -> Vec<u8> {
