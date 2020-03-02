@@ -1,5 +1,5 @@
 use integer_encoding::VarIntReader;
-use multihash::{self, Multihash};
+use multihash::{self, MultihashRef};
 use std::io::Cursor;
 use std::str::FromStr;
 
@@ -77,7 +77,7 @@ impl ToCid for [u8] {
     /// Create a Cid from a byte slice.
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
-            let mh = Multihash::from_bytes(Vec::from(self))?;
+            let mh = MultihashRef::from_slice(self)?.to_owned();
             Ok(Cid::new(Codec::DagProtobuf, Version::V0, mh))
         } else {
             let mut cur = Cursor::new(self);
@@ -89,7 +89,7 @@ impl ToCid for [u8] {
 
             let hash = &self[cur.position() as usize..];
 
-            let mh = Multihash::from_bytes(Vec::from(hash))?;
+            let mh = MultihashRef::from_slice(hash)?.to_owned();
 
             Ok(Cid::new(codec, version, mh))
         }
