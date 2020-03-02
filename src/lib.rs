@@ -35,11 +35,11 @@ pub struct Prefix {
 
 impl Cid {
     /// Create a new CID.
-    pub fn new(codec: Codec, version: Version, hash: &[u8]) -> Cid {
+    pub fn new(codec: Codec, version: Version, hash: Multihash) -> Cid {
         Cid {
             version,
             codec,
-            hash: Multihash::from_bytes(hash.into()).unwrap(),
+            hash,
         }
     }
 

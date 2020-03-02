@@ -77,9 +77,8 @@ impl ToCid for [u8] {
     /// Create a Cid from a byte slice.
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
-            // Verify that hash can be decoded, this is very cheap
-            let _mh = Multihash::from_bytes(Vec::from(self))?;
-            Ok(Cid::new(Codec::DagProtobuf, Version::V0, self))
+            let mh = Multihash::from_bytes(Vec::from(self))?;
+            Ok(Cid::new(Codec::DagProtobuf, Version::V0, mh))
         } else {
             let mut cur = Cursor::new(self);
             let raw_version = cur.read_varint()?;
@@ -90,10 +89,9 @@ impl ToCid for [u8] {
 
             let hash = &self[cur.position() as usize..];
 
-            // Verify that hash can be decoded, this is very cheap
-            let _mh = Multihash::from_bytes(Vec::from(hash))?;
+            let mh = Multihash::from_bytes(Vec::from(hash))?;
 
-            Ok(Cid::new(codec, version, hash))
+            Ok(Cid::new(codec, version, mh))
         }
     }
 }
