@@ -21,7 +21,7 @@ use std::io::Cursor;
 pub struct Cid {
     pub version: Version,
     pub codec: Codec,
-    pub hash: Vec<u8>,
+    pub hash: Multihash,
 }
 
 /// Prefix represents all metadata of a CID, without the actual content.
@@ -39,7 +39,7 @@ impl Cid {
         Cid {
             version,
             codec,
-            hash: hash.into(),
+            hash: Multihash::from_bytes(hash.into()).unwrap(),
         }
     }
 
@@ -50,8 +50,10 @@ impl Cid {
 
     /// Create a new CID from a prefix and some data.
     pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = prefix.mh_type.hasher().unwrap().digest(data).into_bytes();
-        hash.truncate(prefix.mh_len + 2);
+        let mut hash = prefix.mh_type.hasher().unwrap().digest(data);
+        if prefix.mh_len < hash.digest().len() {
+            hash = multihash::wrap(hash.algorithm(), &hash.digest()[..prefix.mh_len]);
+        }
         Cid {
             version: prefix.version,
             codec: prefix.codec.to_owned(),
@@ -62,7 +64,7 @@ impl Cid {
     fn to_string_v0(&self) -> String {
         use multibase::{encode, Base};
 
-        let mut string = encode(Base::Base58Btc, self.hash.as_slice());
+        let mut string = encode(Base::Base58Btc, self.hash.to_vec());
 
         // Drop the first character as v0 does not know
         // about multibase
@@ -78,7 +80,7 @@ impl Cid {
     }
 
     fn to_bytes_v0(&self) -> Vec<u8> {
-        self.hash.clone()
+        self.hash.to_vec()
     }
 
     fn to_bytes_v1(&self) -> Vec<u8> {
@@ -98,14 +100,11 @@ impl Cid {
     }
 
     pub fn prefix(&self) -> Prefix {
-        // Unwrap is safe, as this should have been validated on creation
-        let mh = Multihash::from_bytes(Vec::from(self.hash.as_slice())).unwrap();
-
         Prefix {
             version: self.version,
             codec: self.codec.to_owned(),
-            mh_type: mh.algorithm(),
-            mh_len: mh.digest().len(),
+            mh_type: self.hash.algorithm(),
+            mh_len: self.hash.digest().len(),
         }
     }
 }
