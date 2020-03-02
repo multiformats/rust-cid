@@ -106,5 +106,5 @@ fn test_base32() {
     let cid = Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
     assert_eq!(cid.version, Version::V1);
     assert_eq!(cid.codec, Codec::Raw);
-    assert_eq!(cid.hash, Sha2_256::digest(b"foo").into_bytes());
+    assert_eq!(cid.hash, Sha2_256::digest(b"foo"));
 }
