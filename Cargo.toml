@@ -10,7 +10,6 @@ readme = "README.md"
 edition = "2018"
 
 [package.metadata.release]
-upload-doc = true
 pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
