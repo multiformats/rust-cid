@@ -5,9 +5,9 @@ use std::str::FromStr;
 
 #[test]
 fn basic_marshalling() {
-    let h = Sha2_256::digest(b"beep boop").into_bytes();
+    let h = Sha2_256::digest(b"beep boop");
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, h);
 
     let data = cid.to_bytes();
     let out = Cid::from(data).unwrap();
@@ -54,9 +54,9 @@ fn v0_error() {
 #[test]
 fn prefix_roundtrip() {
     let data = b"awesome test content";
-    let h = Sha2_256::digest(data).into_bytes();
+    let h = Sha2_256::digest(data);
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, h);
     let prefix = cid.prefix();
 
     let cid2 = Cid::new_from_prefix(&prefix, data);

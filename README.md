@@ -39,7 +39,7 @@ use multihash;
 fn main() {
     let h = multihash::Sha2_256::digest(b"beep boop");
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, &h);
+    let cid = Cid::new(Codec::DagProtobuf, Version::V1, h);
 
     let data = cid.to_bytes();
     let out = Cid::from(data).unwrap();
