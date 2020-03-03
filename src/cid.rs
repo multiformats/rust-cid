@@ -11,8 +11,11 @@ use crate::version::Version;
 /// Representation of a CID.
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub struct Cid {
+    /// The version of CID.
     pub version: Version,
+    /// The codec of CID.
     pub codec: Codec,
+    /// The multihash of CID.
     pub hash: Multihash,
 }
 
@@ -39,7 +42,7 @@ impl Cid {
         }
         Cid {
             version: prefix.version,
-            codec: prefix.codec.to_owned(),
+            codec: prefix.codec,
             hash,
         }
     }
@@ -70,6 +73,7 @@ impl Cid {
         res
     }
 
+    /// Convert CID to encoded bytes.
     pub fn to_bytes(&self) -> Vec<u8> {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
@@ -77,10 +81,11 @@ impl Cid {
         }
     }
 
+    /// Return the prefix of the CID.
     pub fn prefix(&self) -> Prefix {
         Prefix {
             version: self.version,
-            codec: self.codec.to_owned(),
+            codec: self.codec,
             mh_type: self.hash.algorithm(),
             mh_len: self.hash.digest().len(),
         }

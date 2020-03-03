@@ -2,6 +2,8 @@
 //!
 //! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 
+#![deny(missing_docs)]
+
 mod cid;
 mod codec;
 mod error;

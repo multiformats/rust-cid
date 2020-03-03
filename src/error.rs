@@ -1,14 +1,20 @@
 use std::{error, fmt};
 
+/// Type alias to use this library's [`Error`] type in a `Result`.
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error types
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Error {
+    /// Unknown CID codec.
     UnknownCodec,
+    /// Input data is too short.
     InputTooShort,
+    /// Multibase or multihash codec failure
     ParsingError,
+    /// Invalid CID version.
     InvalidCidVersion,
+    /// Varint decode failure.
     VarIntDecodeError,
 }
 

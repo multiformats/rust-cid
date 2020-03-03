@@ -7,13 +7,18 @@ use crate::version::Version;
 /// Prefix represents all metadata of a CID, without the actual content.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Prefix {
+    /// The version of CID.
     pub version: Version,
+    /// The codec of CID.
     pub codec: Codec,
+    /// The multihash type of CID.
     pub mh_type: multihash::Code,
+    /// The multihash length of CID.
     pub mh_len: usize,
 }
 
 impl Prefix {
+    /// Create a new prefix from encoded bytes.
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
         let (raw_version, remain) = varint_decode::u64(data)?;
         let version = Version::from(raw_version)?;
@@ -37,6 +42,7 @@ impl Prefix {
         })
     }
 
+    /// Convert the prefix to encoded bytes.
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(4);
 

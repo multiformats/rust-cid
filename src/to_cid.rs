@@ -7,12 +7,14 @@ use crate::codec::Codec;
 use crate::error::{Error, Result};
 use crate::version::Version;
 
+/// A trait for creating a CID from data.
 pub trait ToCid {
+    /// The only method for creating a CID from data in the `ToCid` trait.
     fn to_cid(&self) -> Result<Cid>;
 }
 
 impl ToCid for String {
-    /// Create a Cid from an owned String.
+    /// Create a CID from an owned String.
     #[inline]
     fn to_cid(&self) -> Result<Cid> {
         self.as_str().to_cid()
@@ -50,7 +52,7 @@ impl ToCid for str {
 }
 
 impl ToCid for Vec<u8> {
-    /// Create a Cid from a byte vector.
+    /// Create a CID from a byte vector.
     #[inline]
     fn to_cid(&self) -> Result<Cid> {
         self.as_slice().to_cid()
@@ -65,7 +67,7 @@ impl<'a> ToCid for &'a [u8] {
 }
 
 impl ToCid for [u8] {
-    /// Create a Cid from a byte slice.
+    /// Create a CID from a byte slice.
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
             let mh = MultihashRef::from_slice(self)?.to_owned();
