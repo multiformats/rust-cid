@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::error::{Error, Result};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub enum Version {

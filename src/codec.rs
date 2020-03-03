@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::error::{Error, Result};
 
 macro_rules! build_codec_enum {
     {$( $val:expr => $var:ident, )*} => {

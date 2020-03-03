@@ -2,10 +2,10 @@ use multibase::Base;
 use multihash::{self, MultihashRef};
 use unsigned_varint::decode as varint_decode;
 
+use crate::cid::Cid;
 use crate::codec::Codec;
 use crate::error::{Error, Result};
 use crate::version::Version;
-use crate::Cid;
 
 pub trait ToCid {
     fn to_cid(&self) -> Result<Cid>;
