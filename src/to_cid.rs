@@ -1,9 +1,14 @@
-use integer_encoding::VarIntReader;
-use multihash::{self, MultihashRef};
 use std::io::Cursor;
 use std::str::FromStr;
 
-use crate::{Cid, Codec, Error, Result, Version};
+use integer_encoding::VarIntReader;
+use multibase::Base;
+use multihash::{self, MultihashRef};
+
+use crate::codec::Codec;
+use crate::error::{Error, Result};
+use crate::version::Version;
+use crate::Cid;
 
 pub trait ToCid {
     fn to_cid(&self) -> Result<Cid>;
@@ -45,17 +50,13 @@ impl ToCid for str {
             return Err(Error::InputTooShort);
         }
 
-        let (_, decoded) = if Version::is_v0_str(hash) {
-            // TODO: could avoid the roundtrip here and just use underlying
-            // base-x Base58Btc decoder here.
-            let hash = multibase::Base::Base58Btc.code().to_string() + hash;
-
-            multibase::decode(hash)
+        if Version::is_v0_str(hash) {
+            let decoded = Base::Base58Btc.decode(hash)?;
+            decoded.to_cid()
         } else {
-            multibase::decode(hash)
-        }?;
-
-        decoded.to_cid()
+            let (_, decoded) = multibase::decode(hash)?;
+            decoded.to_cid()
+        }
     }
 }
 
