@@ -17,7 +17,7 @@ use std::fmt;
 use std::io::Cursor;
 
 /// Representation of a CID.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub struct Cid {
     pub version: Version,
     pub codec: Codec,

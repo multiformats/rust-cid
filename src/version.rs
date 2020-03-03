@@ -1,6 +1,6 @@
 use crate::{Error, Result};
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub enum Version {
     V0,
     V1,
