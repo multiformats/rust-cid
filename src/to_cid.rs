@@ -1,9 +1,6 @@
-use std::io::Cursor;
-use std::str::FromStr;
-
-use integer_encoding::VarIntReader;
 use multibase::Base;
 use multihash::{self, MultihashRef};
+use unsigned_varint::decode as varint_decode;
 
 use crate::codec::Codec;
 use crate::error::{Error, Result};
@@ -12,14 +9,6 @@ use crate::Cid;
 
 pub trait ToCid {
     fn to_cid(&self) -> Result<Cid>;
-}
-
-impl ToCid for Vec<u8> {
-    /// Create a Cid from a byte vector.
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        self.as_slice().to_cid()
-    }
 }
 
 impl ToCid for String {
@@ -60,10 +49,11 @@ impl ToCid for str {
     }
 }
 
-impl FromStr for Cid {
-    type Err = Error;
-    fn from_str(src: &str) -> Result<Self> {
-        src.to_cid()
+impl ToCid for Vec<u8> {
+    /// Create a Cid from a byte vector.
+    #[inline]
+    fn to_cid(&self) -> Result<Cid> {
+        self.as_slice().to_cid()
     }
 }
 
@@ -81,14 +71,11 @@ impl ToCid for [u8] {
             let mh = MultihashRef::from_slice(self)?.to_owned();
             Ok(Cid::new(Codec::DagProtobuf, Version::V0, mh))
         } else {
-            let mut cur = Cursor::new(self);
-            let raw_version = cur.read_varint()?;
-            let raw_codec = cur.read_varint()?;
-
+            let (raw_version, remain) = varint_decode::u64(&self)?;
             let version = Version::from(raw_version)?;
-            let codec = Codec::from(raw_codec)?;
 
-            let hash = &self[cur.position() as usize..];
+            let (raw_codec, hash) = varint_decode::u64(&remain)?;
+            let codec = Codec::from(raw_codec)?;
 
             let mh = MultihashRef::from_slice(hash)?.to_owned();
 
