@@ -10,6 +10,9 @@ mod error;
 mod prefix;
 mod version;
 
+#[cfg(any(test, feature = "test"))]
+mod arb;
+
 pub use self::cid::Cid;
 pub use self::codec::Codec;
 pub use self::error::{Error, Result};
