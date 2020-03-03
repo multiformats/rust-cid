@@ -1,6 +1,6 @@
-use std::{fmt, io};
+use std::{error, fmt};
 
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error types
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -11,6 +11,8 @@ pub enum Error {
     InvalidCidVersion,
     VarIntDecodeError,
 }
+
+impl error::Error for Error {}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -24,12 +26,6 @@ impl fmt::Display for Error {
         };
 
         f.write_str(error)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(_: io::Error) -> Error {
-        Error::ParsingError
     }
 }
 
@@ -60,11 +56,5 @@ impl From<multihash::DecodeOwnedError> for Error {
 impl From<unsigned_varint::decode::Error> for Error {
     fn from(_: unsigned_varint::decode::Error) -> Self {
         Error::VarIntDecodeError
-    }
-}
-
-impl From<Error> for fmt::Error {
-    fn from(_: Error) -> fmt::Error {
-        fmt::Error {}
     }
 }
