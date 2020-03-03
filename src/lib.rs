@@ -1,20 +1,23 @@
+//! # cid
+//!
+//! Implementation of [cid](https://github.com/ipld/cid) in Rust.
+
 mod codec;
 mod error;
-/// ! # cid
-/// !
-/// ! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 mod to_cid;
 mod version;
 
-pub use codec::Codec;
-pub use error::{Error, Result};
-pub use to_cid::ToCid;
-pub use version::Version;
+pub use self::codec::Codec;
+pub use self::error::{Error, Result};
+pub use self::to_cid::ToCid;
+pub use self::version::Version;
 
-use integer_encoding::{VarIntReader, VarIntWriter};
-use multihash::Multihash;
 use std::fmt;
 use std::io::Cursor;
+
+use integer_encoding::{VarIntReader, VarIntWriter};
+use multibase::Base;
+use multihash::Multihash;
 
 /// Representation of a CID.
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
@@ -62,21 +65,11 @@ impl Cid {
     }
 
     fn to_string_v0(&self) -> String {
-        use multibase::{encode, Base};
-
-        let mut string = encode(Base::Base58Btc, self.hash.as_bytes());
-
-        // Drop the first character as v0 does not know
-        // about multibase
-        string.remove(0);
-
-        string
+        Base::Base58Btc.encode(self.hash.as_bytes())
     }
 
     fn to_string_v1(&self) -> String {
-        use multibase::{encode, Base};
-
-        encode(Base::Base58Btc, self.to_bytes().as_slice())
+        multibase::encode(Base::Base58Btc, self.to_bytes().as_slice())
     }
 
     fn to_bytes_v0(&self) -> Vec<u8> {
