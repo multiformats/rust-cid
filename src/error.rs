@@ -9,6 +9,7 @@ pub enum Error {
     InputTooShort,
     ParsingError,
     InvalidCidVersion,
+    VarIntDecodeError,
 }
 
 impl fmt::Display for Error {
@@ -19,6 +20,7 @@ impl fmt::Display for Error {
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
+            VarIntDecodeError => "Failed to decode unsigned varint format",
         };
 
         f.write_str(error)
@@ -52,6 +54,12 @@ impl From<multihash::DecodeError> for Error {
 impl From<multihash::DecodeOwnedError> for Error {
     fn from(_: multihash::DecodeOwnedError) -> Error {
         Error::ParsingError
+    }
+}
+
+impl From<unsigned_varint::decode::Error> for Error {
+    fn from(_: unsigned_varint::decode::Error) -> Self {
+        Error::VarIntDecodeError
     }
 }
 

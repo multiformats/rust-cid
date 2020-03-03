@@ -13,11 +13,11 @@ pub use self::to_cid::ToCid;
 pub use self::version::Version;
 
 use std::fmt;
-use std::io::Cursor;
+use std::str::FromStr;
 
-use integer_encoding::{VarIntReader, VarIntWriter};
 use multibase::Base;
 use multihash::Multihash;
+use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 /// Representation of a CID.
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
@@ -78,8 +78,13 @@ impl Cid {
 
     fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
-        res.write_varint(u64::from(self.version)).unwrap();
-        res.write_varint(u64::from(self.codec)).unwrap();
+
+        let mut buf = varint_encode::u64_buffer();
+        let version = varint_encode::u64(self.version.into(), &mut buf);
+        res.extend_from_slice(version);
+        let mut buf = varint_encode::u64_buffer();
+        let codec = varint_encode::u64(self.codec.into(), &mut buf);
+        res.extend_from_slice(codec);
         res.extend_from_slice(&self.hash);
 
         res
@@ -119,23 +124,28 @@ impl fmt::Display for Cid {
     }
 }
 
+impl FromStr for Cid {
+    type Err = Error;
+    fn from_str(src: &str) -> Result<Self> {
+        src.to_cid()
+    }
+}
+
 impl Prefix {
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
-        let mut cur = Cursor::new(data);
-
-        let raw_version = cur.read_varint()?;
-        let raw_codec = cur.read_varint()?;
-        let raw_mh_type: u64 = cur.read_varint()?;
-
+        let (raw_version, remain) = varint_decode::u64(data)?;
         let version = Version::from(raw_version)?;
+
+        let (raw_codec, remain) = varint_decode::u64(remain)?;
         let codec = Codec::from(raw_codec)?;
 
+        let (raw_mh_type, remain) = varint_decode::u64(remain)?;
         let mh_type = match multihash::Code::from_u64(raw_mh_type) {
-            multihash::Code::Custom(_) => Err(Error::UnknownCodec),
-            code => Ok(code),
-        }?;
+            multihash::Code::Custom(_) => return Err(Error::UnknownCodec),
+            code => code,
+        };
 
-        let mh_len = cur.read_varint()?;
+        let (mh_len, _remain) = varint_decode::usize(remain)?;
 
         Ok(Prefix {
             version,
@@ -148,11 +158,18 @@ impl Prefix {
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(4);
 
-        // io can't fail on Vec
-        res.write_varint(u64::from(self.version)).unwrap();
-        res.write_varint(u64::from(self.codec)).unwrap();
-        res.write_varint(self.mh_type.to_u64()).unwrap();
-        res.write_varint(self.mh_len as u64).unwrap();
+        let mut buf = varint_encode::u64_buffer();
+        let version = varint_encode::u64(self.version.into(), &mut buf);
+        res.extend_from_slice(version);
+        let mut buf = varint_encode::u64_buffer();
+        let codec = varint_encode::u64(self.codec.into(), &mut buf);
+        res.extend_from_slice(codec);
+        let mut buf = varint_encode::u64_buffer();
+        let mh_type = varint_encode::u64(self.mh_type.to_u64(), &mut buf);
+        res.extend_from_slice(mh_type);
+        let mut buf = varint_encode::u64_buffer();
+        let mh_len = varint_encode::u64(self.mh_len as u64, &mut buf);
+        res.extend_from_slice(mh_len);
 
         res
     }
