@@ -21,7 +21,7 @@ pub struct Cid {
 
 impl Cid {
     /// Create a new CID.
-    pub fn new(codec: Codec, version: Version, hash: Multihash) -> Cid {
+    pub fn new(version: Version, codec: Codec, hash: Multihash) -> Cid {
         Cid {
             version,
             codec,

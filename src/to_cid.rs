@@ -71,7 +71,7 @@ impl ToCid for [u8] {
     fn to_cid(&self) -> Result<Cid> {
         if Version::is_v0_binary(self) {
             let mh = MultihashRef::from_slice(self)?.to_owned();
-            Ok(Cid::new(Codec::DagProtobuf, Version::V0, mh))
+            Ok(Cid::new(Version::V0, Codec::DagProtobuf, mh))
         } else {
             let (raw_version, remain) = varint_decode::u64(&self)?;
             let version = Version::from(raw_version)?;
@@ -81,7 +81,7 @@ impl ToCid for [u8] {
 
             let mh = MultihashRef::from_slice(hash)?.to_owned();
 
-            Ok(Cid::new(codec, version, mh))
+            Ok(Cid::new(version, codec, mh))
         }
     }
 }
