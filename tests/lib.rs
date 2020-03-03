@@ -1,7 +1,8 @@
-use cid::{Cid, Codec, Error, Prefix, Version};
-use multihash::Sha2_256;
 use std::collections::HashMap;
 use std::str::FromStr;
+
+use cid::{Cid, Codec, Error, Prefix, Version};
+use multihash::Sha2_256;
 
 #[test]
 fn basic_marshalling() {
