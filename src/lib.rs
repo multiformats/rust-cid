@@ -64,7 +64,7 @@ impl Cid {
     fn to_string_v0(&self) -> String {
         use multibase::{encode, Base};
 
-        let mut string = encode(Base::Base58Btc, self.hash.to_vec());
+        let mut string = encode(Base::Base58Btc, self.hash.as_bytes());
 
         // Drop the first character as v0 does not know
         // about multibase
