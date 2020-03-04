@@ -3,10 +3,14 @@
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
 [![](https://img.shields.io/badge/project-multiformats-blue.svg?style=flat-square)](https://github.com/multiformats/multiformats)
 [![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](https://webchat.freenode.net/?channels=%23ipfs)
-[![Travis CI](https://img.shields.io/travis/multiformats/rust-cid.svg?style=flat-square&branch=master)](https://travis-ci.org/multiformats/rust-cid)
-[![](https://img.shields.io/badge/rust-docs-blue.svg?style=flat-square)](https://docs.rs/crate/cid)
-[![crates.io](https://img.shields.io/badge/crates.io-v0.1.0-orange.svg?style=flat-square )](https://crates.io/crates/cid)
 [![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+
+[![Build Status](https://github.com/multiformats/rust-cid/workflows/build/badge.svg)](https://github.com/multiformats/rust-cid/actions)
+[![Crates.io](https://img.shields.io/crates/v/cid?style=flat-square)](https://crates.io/crates/cid)
+[![License](https://img.shields.io/crates/l/cid?style=flat-square)](LICENSE)
+[![Documentation](https://docs.rs/cid/badge.svg?style=flat-square)](https://docs.rs/cid)
+[![Dependency Status](https://deps.rs/repo/github/multiformats/rust-cid/status.svg)](https://deps.rs/repo/github/multiformats/rust-cid)
+[![Coverage Status](https://img.shields.io/codecov/c/github/multiformats/rust-cid?style=flat-square)](https://codecov.io/gh/multiformats/rust-cid)
 
 > [CID](https://github.com/ipld/cid) implementation in Rust.
 
@@ -25,7 +29,7 @@ First add this to your `Cargo.toml`
 ```toml
 [dependencies]
 cid = "*"
-multihash = "*"
+multihash = "0.10"
 ```
 
 Then run `cargo build`.
@@ -34,12 +38,12 @@ Then run `cargo build`.
 
 ```rust
 use cid::{Cid, Codec, Version};
-use multihash;
+use multihash::Sha2_256;
 
 fn main() {
-    let h = multihash::Sha2_256::digest(b"beep boop");
+    let h = Sha2_256::digest(b"beep boop");
 
-    let cid = Cid::new(Codec::DagProtobuf, Version::V1, h);
+    let cid = Cid::new(Version::V1, Codec::DagProtobuf, h);
 
     let data = cid.to_bytes();
     let out = Cid::from(data).unwrap();
