@@ -13,7 +13,19 @@ edition = "2018"
 pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
+[features]
+ipld_dag_json = ["serde", "serde_json"]
+ipld_dag_cbor = ["serde", "serde_bytes", "serde_cbor"]
+
 [dependencies]
 multihash = "0.10"
 multibase = "0.8.0"
 unsigned-varint = "0.3"
+
+serde = { version = "1.0", optional = true }
+serde_bytes = { version = "0.11", optional = true }
+serde_cbor = { version = "0.11", features = ["tags"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[dev-dependencies]
+serde_derive = "1.0"
