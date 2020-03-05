@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use multibase::Base;
-use multihash::{Multihash, MultihashRef};
+use multihash::{Code, Multihash, MultihashRef};
 use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 use crate::codec::Codec;
@@ -21,12 +21,37 @@ pub struct Cid {
 }
 
 impl Cid {
-    /// Create a new CID.
-    pub fn new(version: Version, codec: Codec, hash: Multihash) -> Cid {
+    /// Create a new CIDv0.
+    pub fn new_v0(hash: Multihash) -> Result<Cid> {
+        if hash.algorithm() != Code::Sha2_256 {
+            return Err(Error::InvalidCidV0Multihash);
+        }
+        Ok(Cid {
+            version: Version::V0,
+            codec: Codec::DagProtobuf,
+            hash,
+        })
+    }
+
+    /// Create a new CIDv1.
+    pub fn new_v1(codec: Codec, hash: Multihash) -> Cid {
         Cid {
-            version,
+            version: Version::V1,
             codec,
             hash,
+        }
+    }
+
+    /// Create a new CID.
+    pub fn new(version: Version, codec: Codec, hash: Multihash) -> Result<Cid> {
+        match version {
+            Version::V0 => {
+                if codec != Codec::DagProtobuf {
+                    return Err(Error::InvalidCidV0Codec);
+                }
+                Self::new_v0(hash)
+            }
+            Version::V1 => Ok(Self::new_v1(codec, hash)),
         }
     }
 
@@ -161,7 +186,7 @@ impl TryFrom<&[u8]> for Cid {
     fn try_from(bytes: &[u8]) -> Result<Self> {
         if Version::is_v0_binary(bytes) {
             let mh = MultihashRef::from_slice(bytes)?.to_owned();
-            Ok(Cid::new(Version::V0, Codec::DagProtobuf, mh))
+            Cid::new_v0(mh)
         } else {
             let (raw_version, remain) = varint_decode::u64(&bytes)?;
             let version = Version::from(raw_version)?;
@@ -171,7 +196,7 @@ impl TryFrom<&[u8]> for Cid {
 
             let mh = MultihashRef::from_slice(hash)?.to_owned();
 
-            Ok(Cid::new(version, codec, mh))
+            Cid::new(version, codec, mh)
         }
     }
 }
