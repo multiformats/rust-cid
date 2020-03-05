@@ -9,14 +9,12 @@ pub enum Version {
     V1,
 }
 
-use Version::*;
-
 impl Version {
     /// Convert a number to the matching version, or `Error` if no valid version is matching.
     pub fn from(raw: u64) -> Result<Version> {
         match raw {
-            0 => Ok(V0),
-            1 => Ok(V1),
+            0 => Ok(Self::V0),
+            1 => Ok(Self::V1),
             _ => Err(Error::InvalidCidVersion),
         }
     }
@@ -37,8 +35,8 @@ impl Version {
 impl From<Version> for u64 {
     fn from(ver: Version) -> u64 {
         match ver {
-            V0 => 0,
-            V1 => 1,
+            Version::V0 => 0,
+            Version::V1 => 1,
         }
     }
 }
