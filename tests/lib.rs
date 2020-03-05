@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
 use cid::{Cid, Codec, Error, Prefix, Version};
@@ -12,14 +12,18 @@ fn basic_marshalling() {
     let cid = Cid::new(Version::V1, Codec::DagProtobuf, h);
 
     let data = cid.to_bytes();
-    let out = Cid::try_from(data).unwrap();
-
+    let out = Cid::try_from(data.clone()).unwrap();
     assert_eq!(cid, out);
 
-    let s = cid.to_string();
-    let out2 = Cid::try_from(&s[..]).unwrap();
-
+    let out2: Cid = data.try_into().unwrap();
     assert_eq!(cid, out2);
+
+    let s = cid.to_string();
+    let out3 = Cid::try_from(&s[..]).unwrap();
+    assert_eq!(cid, out3);
+
+    let out4: Cid = (&s[..]).try_into().unwrap();
+    assert_eq!(cid, out4);
 }
 
 #[test]
