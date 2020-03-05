@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use multibase::Base;
 use multihash::Multihash;
 use unsigned_varint::encode as varint_encode;
@@ -5,7 +7,6 @@ use unsigned_varint::encode as varint_encode;
 use crate::codec::Codec;
 use crate::error::{Error, Result};
 use crate::prefix::Prefix;
-use crate::to_cid::ToCid;
 use crate::version::Version;
 
 /// Representation of a CID.
@@ -27,11 +28,6 @@ impl Cid {
             codec,
             hash,
         }
-    }
-
-    /// Create a new CID from raw data (binary or multibase encoded string)
-    pub fn from<T: ToCid>(data: T) -> Result<Cid> {
-        data.to_cid()
     }
 
     /// Create a new CID from a prefix and some data.
@@ -111,7 +107,8 @@ impl std::fmt::Display for Cid {
 
 impl std::str::FromStr for Cid {
     type Err = Error;
-    fn from_str(src: &str) -> Result<Self> {
-        src.to_cid()
+
+    fn from_str(cid_str: &str) -> Result<Self> {
+        Cid::try_from(cid_str)
     }
 }

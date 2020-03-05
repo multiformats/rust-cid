@@ -1,3 +1,5 @@
+use core::convert::TryFrom;
+
 use multibase::Base;
 use multihash::{self, MultihashRef};
 use unsigned_varint::decode as varint_decode;
@@ -7,73 +9,57 @@ use crate::codec::Codec;
 use crate::error::{Error, Result};
 use crate::version::Version;
 
-/// A trait for creating a CID from data.
-pub trait ToCid {
-    /// The only method for creating a CID from data in the `ToCid` trait.
-    fn to_cid(&self) -> Result<Cid>;
-}
+impl TryFrom<String> for Cid {
+    type Error = Error;
 
-impl ToCid for String {
-    /// Create a CID from an owned String.
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        self.as_str().to_cid()
+    fn try_from(cid_str: String) -> Result<Self> {
+        Self::try_from(cid_str.as_str())
     }
 }
 
-impl<'a> ToCid for &'a str {
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        ToCid::to_cid(*self)
-    }
-}
+impl TryFrom<&str> for Cid {
+    type Error = Error;
 
-impl ToCid for str {
-    fn to_cid(&self) -> Result<Cid> {
+    fn try_from(cid_str: &str) -> Result<Self> {
         static IPFS_DELIMETER: &str = "/ipfs/";
 
-        let hash = match self.find(IPFS_DELIMETER) {
-            Some(index) => &self[index + IPFS_DELIMETER.len()..],
-            _ => self,
+        let hash = match cid_str.find(IPFS_DELIMETER) {
+            Some(index) => &cid_str[index + IPFS_DELIMETER.len()..],
+            _ => cid_str,
         };
 
         if hash.len() < 2 {
             return Err(Error::InputTooShort);
         }
 
-        if Version::is_v0_str(hash) {
-            let decoded = Base::Base58Btc.decode(hash)?;
-            decoded.to_cid()
+        let decoded = if Version::is_v0_str(hash) {
+            Base::Base58Btc.decode(hash)?
         } else {
             let (_, decoded) = multibase::decode(hash)?;
-            decoded.to_cid()
-        }
+            decoded
+        };
+
+        Self::try_from(decoded)
     }
 }
 
-impl ToCid for Vec<u8> {
-    /// Create a CID from a byte vector.
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        self.as_slice().to_cid()
+impl TryFrom<Vec<u8>> for Cid {
+    type Error = Error;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self> {
+        Self::try_from(bytes.as_slice())
     }
 }
 
-impl<'a> ToCid for &'a [u8] {
-    #[inline]
-    fn to_cid(&self) -> Result<Cid> {
-        ToCid::to_cid(*self)
-    }
-}
+impl TryFrom<&[u8]> for Cid {
+    type Error = Error;
 
-impl ToCid for [u8] {
-    /// Create a CID from a byte slice.
-    fn to_cid(&self) -> Result<Cid> {
-        if Version::is_v0_binary(self) {
-            let mh = MultihashRef::from_slice(self)?.to_owned();
+    fn try_from(bytes: &[u8]) -> Result<Self> {
+        if Version::is_v0_binary(bytes) {
+            let mh = MultihashRef::from_slice(bytes)?.to_owned();
             Ok(Cid::new(Version::V0, Codec::DagProtobuf, mh))
         } else {
-            let (raw_version, remain) = varint_decode::u64(&self)?;
+            let (raw_version, remain) = varint_decode::u64(&bytes)?;
             let version = Version::from(raw_version)?;
 
             let (raw_codec, hash) = varint_decode::u64(&remain)?;
