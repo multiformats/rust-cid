@@ -215,3 +215,21 @@ impl TryFrom<&[u8]> for Cid {
         }
     }
 }
+
+impl From<&Cid> for Cid {
+    fn from(cid: &Cid) -> Self {
+        cid.to_owned()
+    }
+}
+
+impl From<Cid> for Vec<u8> {
+    fn from(cid: Cid) -> Self {
+        cid.to_bytes()
+    }
+}
+
+impl From<Cid> for String {
+    fn from(cid: Cid) -> Self {
+        cid.to_string()
+    }
+}
