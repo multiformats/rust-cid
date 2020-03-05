@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::error::{Error, Result};
 
 /// The version of the CID.
@@ -10,15 +12,6 @@ pub enum Version {
 }
 
 impl Version {
-    /// Convert a number to the matching version, or `Error` if no valid version is matching.
-    pub fn from(raw: u64) -> Result<Version> {
-        match raw {
-            0 => Ok(Self::V0),
-            1 => Ok(Self::V1),
-            _ => Err(Error::InvalidCidVersion),
-        }
-    }
-
     /// Check if the version of `data` string is CIDv0.
     pub fn is_v0_str(data: &str) -> bool {
         // v0 is a Base58Btc encoded sha hash, so it has
@@ -29,6 +22,19 @@ impl Version {
     /// Check if the version of `data` bytes is CIDv0.
     pub fn is_v0_binary(data: &[u8]) -> bool {
         data.len() == 34 && data.starts_with(&[0x12, 0x20])
+    }
+}
+
+/// Convert a number to the matching version, or `Error` if no valid version is matching.
+impl TryFrom<u64> for Version {
+    type Error = Error;
+
+    fn try_from(raw: u64) -> Result<Self> {
+        match raw {
+            0 => Ok(Self::V0),
+            1 => Ok(Self::V1),
+            _ => Err(Error::InvalidCidVersion),
+        }
     }
 }
 

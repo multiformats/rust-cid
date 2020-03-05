@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 use crate::codec::Codec;
@@ -21,7 +23,7 @@ impl Prefix {
     /// Create a new prefix from encoded bytes.
     pub fn new_from_bytes(data: &[u8]) -> Result<Prefix> {
         let (raw_version, remain) = varint_decode::u64(data)?;
-        let version = Version::from(raw_version)?;
+        let version = Version::try_from(raw_version)?;
 
         let (raw_codec, remain) = varint_decode::u64(remain)?;
         let codec = Codec::from(raw_codec)?;
