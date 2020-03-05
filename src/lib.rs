@@ -8,7 +8,6 @@ mod cid;
 mod codec;
 mod error;
 mod prefix;
-mod to_cid;
 mod version;
 
 pub use self::cid::Cid;
