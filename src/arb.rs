@@ -5,7 +5,7 @@ use quickcheck::{Arbitrary, Gen};
 use rand::seq::SliceRandom;
 use rand::Rng;
 
-use crate::{Cid, Codec, Prefix, Version};
+use crate::{Cid, Codec, Version};
 
 const CODECS: [Codec; 18] = [
     Codec::Raw,
@@ -64,18 +64,6 @@ impl Arbitrary for Cid {
             let codec: Codec = Arbitrary::arbitrary(g);
             let hash: Multihash = Arbitrary::arbitrary(g);
             Cid::new_v1(codec, hash)
-        }
-    }
-}
-
-impl Arbitrary for Prefix {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let cid: Cid = Arbitrary::arbitrary(g);
-        Prefix {
-            version: cid.version(),
-            codec: cid.codec(),
-            mh_type: cid.hash().algorithm(),
-            mh_len: cid.hash().digest().len(),
         }
     }
 }

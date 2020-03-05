@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
-use cid::{Cid, Codec, Error, Prefix, Version};
+use cid::{Cid, Codec, Error, Version};
 use multihash::Sha2_256;
 
 #[test]
@@ -58,24 +58,6 @@ fn v0_error() {
 }
 
 #[test]
-fn prefix_roundtrip() {
-    let data = b"awesome test content";
-    let h = Sha2_256::digest(data);
-
-    let cid = Cid::new_v1(Codec::DagProtobuf, h);
-    let prefix = cid.prefix();
-
-    let cid2 = Cid::new_from_prefix(&prefix, data);
-
-    assert_eq!(cid, cid2);
-
-    let prefix_bytes = prefix.as_bytes();
-    let prefix2 = Prefix::new_from_bytes(&prefix_bytes).unwrap();
-
-    assert_eq!(prefix, prefix2);
-}
-
-#[test]
 fn from() {
     let the_hash = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
 
@@ -95,14 +77,9 @@ fn from() {
 #[test]
 fn test_hash() {
     let data: Vec<u8> = vec![1, 2, 3];
-    let prefix = Prefix {
-        version: Version::V0,
-        codec: Codec::DagProtobuf,
-        mh_type: multihash::Code::Sha2_256,
-        mh_len: 32,
-    };
+    let hash = Sha2_256::digest(&data);
     let mut map = HashMap::new();
-    let cid = Cid::new_from_prefix(&prefix, &data);
+    let cid = Cid::new_v0(hash).unwrap();
     map.insert(cid.clone(), data.clone());
     assert_eq!(&data, map.get(&cid).unwrap());
 }
