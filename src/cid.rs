@@ -6,7 +6,6 @@ use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 use crate::codec::Codec;
 use crate::error::{Error, Result};
-use crate::prefix::Prefix;
 use crate::version::Version;
 
 /// Representation of a CID.
@@ -55,19 +54,6 @@ impl Cid {
         }
     }
 
-    /// Create a new CID from a prefix and some data.
-    pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = prefix.mh_type.hasher().unwrap().digest(data);
-        if prefix.mh_len < hash.digest().len() {
-            hash = multihash::wrap(hash.algorithm(), &hash.digest()[..prefix.mh_len]);
-        }
-        Cid {
-            version: prefix.version,
-            codec: prefix.codec,
-            hash,
-        }
-    }
-
     fn to_string_v0(&self) -> String {
         Base::Base58Btc.encode(self.hash.as_bytes())
     }
@@ -99,16 +85,6 @@ impl Cid {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
-        }
-    }
-
-    /// Return the prefix of the CID.
-    pub fn prefix(&self) -> Prefix {
-        Prefix {
-            version: self.version,
-            codec: self.codec,
-            mh_type: self.hash.algorithm(),
-            mh_len: self.hash.digest().len(),
         }
     }
 }

@@ -7,11 +7,9 @@
 mod cid;
 mod codec;
 mod error;
-mod prefix;
 mod version;
 
 pub use self::cid::Cid;
 pub use self::codec::Codec;
 pub use self::error::{Error, Result};
-pub use self::prefix::Prefix;
 pub use self::version::Version;
