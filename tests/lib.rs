@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::str::FromStr;
 
 use cid::{Cid, Codec, Error, Prefix, Version};
@@ -11,25 +12,25 @@ fn basic_marshalling() {
     let cid = Cid::new(Version::V1, Codec::DagProtobuf, h);
 
     let data = cid.to_bytes();
-    let out = Cid::from(data).unwrap();
+    let out = Cid::try_from(data).unwrap();
 
     assert_eq!(cid, out);
 
     let s = cid.to_string();
-    let out2 = Cid::from(&s[..]).unwrap();
+    let out2 = Cid::try_from(&s[..]).unwrap();
 
     assert_eq!(cid, out2);
 }
 
 #[test]
 fn empty_string() {
-    assert_eq!(Cid::from(""), Err(Error::InputTooShort));
+    assert_eq!(Cid::try_from(""), Err(Error::InputTooShort));
 }
 
 #[test]
 fn v0_handling() {
     let old = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n";
-    let cid = Cid::from(old).unwrap();
+    let cid = Cid::try_from(old).unwrap();
 
     assert_eq!(cid.version, Version::V0);
     assert_eq!(cid.to_string(), old);
@@ -49,7 +50,7 @@ fn from_str() {
 #[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
-    assert_eq!(Cid::from(bad), Err(Error::ParsingError));
+    assert_eq!(Cid::try_from(bad), Err(Error::ParsingError));
 }
 
 #[test]
@@ -81,7 +82,7 @@ fn from() {
     ];
 
     for case in cases {
-        let cid = Cid::from(case).unwrap();
+        let cid = Cid::try_from(case).unwrap();
         assert_eq!(cid.version, Version::V0);
         assert_eq!(cid.to_string(), the_hash);
     }
