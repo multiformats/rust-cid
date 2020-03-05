@@ -14,6 +14,10 @@ pub enum Error {
     ParsingError,
     /// Invalid CID version.
     InvalidCidVersion,
+    /// Invalid CIDv0 codec.
+    InvalidCidV0Codec,
+    /// Invalid CIDv0 multihash.
+    InvalidCidV0Multihash,
     /// Varint decode failure.
     VarIntDecodeError,
 }
@@ -28,6 +32,8 @@ impl fmt::Display for Error {
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
             InvalidCidVersion => "Unrecognized CID version",
+            InvalidCidV0Codec => "CIDv0 requires a DagPB codec",
+            InvalidCidV0Multihash => "CIDv0 requires a Sha-256 multihash",
             VarIntDecodeError => "Failed to decode unsigned varint format",
         };
 
