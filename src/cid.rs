@@ -13,11 +13,11 @@ use crate::version::Version;
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub struct Cid {
     /// The version of CID.
-    pub version: Version,
+    version: Version,
     /// The codec of CID.
-    pub codec: Codec,
+    codec: Codec,
     /// The multihash of CID.
-    pub hash: Multihash,
+    hash: Multihash,
 }
 
 impl Cid {
@@ -66,6 +66,21 @@ impl Cid {
             codec: prefix.codec,
             hash,
         }
+    }
+
+    /// Returns the cid version.
+    pub fn version(&self) -> Version {
+        self.version
+    }
+
+    /// Returns the cid codec.
+    pub fn codec(&self) -> Codec {
+        self.codec
+    }
+
+    /// Returns the cid multihash.
+    pub fn hash(&self) -> MultihashRef {
+        self.hash.as_ref()
     }
 
     fn to_string_v0(&self) -> String {
