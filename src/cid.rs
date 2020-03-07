@@ -43,15 +43,10 @@ impl Cid {
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: Codec, hash: Multihash) -> Result<Cid> {
-        match version {
-            Version::V0 => {
-                if codec != Codec::DagProtobuf {
-                    return Err(Error::InvalidCidV0Codec);
-                }
-                Self::new_v0(hash)
-            }
-            Version::V1 => Ok(Self::new_v1(codec, hash)),
+    pub fn new(codec: Codec, hash: Multihash) -> Result<Cid> {
+        match codec {
+            Codec::DagProtobuf => Self::new_v0(hash),
+            _ => Ok(Self::new_v1(codec, hash)),
         }
     }
 
