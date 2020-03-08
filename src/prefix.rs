@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 use crate::codec::Codec;
@@ -24,7 +26,7 @@ impl Prefix {
         let version = Version::from(raw_version)?;
 
         let (raw_codec, remain) = varint_decode::u64(remain)?;
-        let codec = Codec::from(raw_codec)?;
+        let codec = Codec::try_from(raw_codec)?;
 
         let (raw_mh_type, remain) = varint_decode::u64(remain)?;
         let mh_type = match multihash::Code::from_u64(raw_mh_type) {

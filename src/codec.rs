@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::error::{Error, Result};
 
 macro_rules! build_codec_enum {
@@ -8,9 +10,11 @@ macro_rules! build_codec_enum {
             $( #[$attr] $codec, )*
         }
 
-        impl Codec {
+        impl TryFrom<u64> for Codec {
+            type Error = Error;
+
             /// Convert a number to the matching codec, or `Error` if unknown codec is matching.
-            pub fn from(raw: u64) -> Result<Codec> {
+            fn try_from(raw: u64) -> Result<Codec> {
                 match raw {
                     $( $code => Ok(Self::$codec), )*
                     _ => Err(Error::UnknownCodec),

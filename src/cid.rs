@@ -192,7 +192,7 @@ impl TryFrom<&[u8]> for Cid {
             let version = Version::from(raw_version)?;
 
             let (raw_codec, hash) = varint_decode::u64(&remain)?;
-            let codec = Codec::from(raw_codec)?;
+            let codec = Codec::try_from(raw_codec)?;
 
             let mh = MultihashRef::from_slice(hash)?.to_owned();
 
