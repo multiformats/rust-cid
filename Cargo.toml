@@ -14,6 +14,17 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [dependencies]
-multihash = "0.10"
+multihash = "0.10.1"
 multibase = "0.8.0"
 unsigned-varint = "0.3"
+
+quickcheck = { version = "0.9.2", optional = true }
+rand = { version = "0.7.3", optional = true }
+
+[dev-dependencies]
+quickcheck = "0.9.2"
+rand = "0.7.3"
+multihash = { version = "0.10.1", features = ["test"] }
+
+[features]
+test = ["quickcheck", "rand"]
