@@ -54,20 +54,15 @@ impl Arbitrary for Cid {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let version: Version = Arbitrary::arbitrary(g);
         let v0 = version == Version::V0;
-        let codec: Codec = if !v0 {
-            // v1 supports arbitrary encodings
-            Arbitrary::arbitrary(g)
-        } else {
-            // v0 does only support DagProtobuf encoding
-            Codec::DagProtobuf
-        };
-        let hash: Multihash = if !v0 {
-            Arbitrary::arbitrary(g)
-        } else {
+        if v0 {
             let data: Vec<u8> = Arbitrary::arbitrary(g);
-            multihash::Sha2_256::digest(&data)
-        };
-        Cid::new(codec, version, hash)
+            let hash = multihash::Sha2_256::digest(&data);
+            Cid::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
+        } else {
+            let codec: Codec = Arbitrary::arbitrary(g);
+            let hash: Multihash = Arbitrary::arbitrary(g);
+            Cid::new_v1(codec, hash)
+        }
     }
 }
 

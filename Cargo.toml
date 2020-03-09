@@ -14,7 +14,7 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [dependencies]
-multihash = { git = "https://github.com/multiformats/rust-multihash", rev = "aff3b7f367824f7229674d5c72a74d908bae01bc" }
+multihash = "0.10.1"
 multibase = "0.8.0"
 unsigned-varint = "0.3"
 
@@ -24,7 +24,7 @@ rand = { version = "0.7.3", optional = true }
 [dev-dependencies]
 quickcheck = "0.9.2"
 rand = "0.7.3"
-multihash = { git = "https://github.com/multiformats/rust-multihash", rev = "aff3b7f367824f7229674d5c72a74d908bae01bc", features = ["test"] }
+multihash = { version = "0.10.1", features = ["test"] }
 
 [features]
 test = ["quickcheck", "rand"]
