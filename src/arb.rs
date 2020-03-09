@@ -1,10 +1,11 @@
 use std::convert::TryFrom;
 
-use crate::{Cid, Codec, Prefix, Version};
 use multihash::Multihash;
 use quickcheck::{Arbitrary, Gen};
 use rand::seq::SliceRandom;
 use rand::Rng;
+
+use crate::{Cid, Codec, Prefix, Version};
 
 const CODECS: [Codec; 18] = [
     Codec::Raw,
