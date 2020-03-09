@@ -56,8 +56,7 @@ impl Arbitrary for Version {
 impl Arbitrary for Cid {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let version: Version = Arbitrary::arbitrary(g);
-        let v0 = version == Version::V0;
-        if v0 {
+        if version == Version::V0 {
             let data: Vec<u8> = Arbitrary::arbitrary(g);
             let hash = multihash::Sha2_256::digest(&data);
             Cid::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
