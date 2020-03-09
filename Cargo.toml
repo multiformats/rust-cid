@@ -1,6 +1,6 @@
 [package]
 name = "cid"
-version = "0.3.2"
+version = "0.4.0"
 description = "CID in rust"
 homepage = "https://github.com/multiformats/rust-cid"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
