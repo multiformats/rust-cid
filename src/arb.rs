@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::{Cid, Codec, Prefix, Version};
 use multihash::Multihash;
 use quickcheck::{Arbitrary, Gen};
@@ -46,7 +48,7 @@ impl Arbitrary for Codec {
 impl Arbitrary for Version {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let version = if g.gen_bool(0.7) { 1 } else { 0 };
-        Version::from(version).unwrap()
+        Version::try_from(version).unwrap()
     }
 }
 
@@ -70,10 +72,10 @@ impl Arbitrary for Prefix {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let cid: Cid = Arbitrary::arbitrary(g);
         Prefix {
-            version: cid.version,
-            codec: cid.codec,
-            mh_type: cid.hash.algorithm(),
-            mh_len: cid.hash.digest().len(),
+            version: cid.version(),
+            codec: cid.codec(),
+            mh_type: cid.hash().algorithm(),
+            mh_len: cid.hash().digest().len(),
         }
     }
 }
