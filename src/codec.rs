@@ -5,7 +5,7 @@ use crate::error::{Error, Result};
 macro_rules! build_codec_enum {
     {$( #[$attr:meta] $code:expr => $codec:ident, )*} => {
         /// List of types currently supported in the multicodec spec.
-        #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug, Hash)]
         pub enum Codec {
             $( #[$attr] $codec, )*
         }
