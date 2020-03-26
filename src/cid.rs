@@ -55,12 +55,15 @@ impl Cid {
         }
     }
 
-    /// Create a new CID from a prefix and some data.
-    pub fn new_from_prefix(prefix: &Prefix, data: &[u8]) -> Cid {
-        let mut hash = prefix.mh_type.hasher().unwrap().digest(data);
-        if prefix.mh_len < hash.digest().len() {
-            hash = multihash::wrap(hash.algorithm(), &hash.digest()[..prefix.mh_len]);
+    /// Create a new CID from a prefix and a hash.
+    pub fn new_from_prefix(prefix: &Prefix, digest: &[u8]) -> Cid {
+        let hash = if digest.len() <= prefix.mh_len {
+            multihash::wrap(prefix.mh_type, &digest)
         }
+        // Trim the digest if it is bigger than the given length
+        else {
+            multihash::wrap(prefix.mh_type, &digest[..prefix.mh_len])
+        };
         Cid {
             version: prefix.version,
             codec: prefix.codec,

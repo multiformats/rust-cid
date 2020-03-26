@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
@@ -61,11 +60,12 @@ fn v0_error() {
 fn prefix_roundtrip() {
     let data = b"awesome test content";
     let h = Sha2_256::digest(data);
+    let digest = h.digest();
 
-    let cid = Cid::new_v1(Codec::DagProtobuf, h);
+    let cid = Cid::new_v1(Codec::DagProtobuf, h.clone());
     let prefix = cid.prefix();
 
-    let cid2 = Cid::new_from_prefix(&prefix, data);
+    let cid2 = Cid::new_from_prefix(&prefix, &digest);
 
     assert_eq!(cid, cid2);
 
@@ -95,16 +95,38 @@ fn from() {
 #[test]
 fn test_hash() {
     let data: Vec<u8> = vec![1, 2, 3];
+    let mh = Sha2_256::digest(&data);
+    let digest = mh.digest();
     let prefix = Prefix {
         version: Version::V0,
         codec: Codec::DagProtobuf,
         mh_type: multihash::Code::Sha2_256,
         mh_len: 32,
     };
-    let mut map = HashMap::new();
-    let cid = Cid::new_from_prefix(&prefix, &data);
-    map.insert(cid.clone(), data.clone());
-    assert_eq!(&data, map.get(&cid).unwrap());
+    let cid = Cid::new_from_prefix(&prefix, &digest);
+    assert_eq!(cid.version(), prefix.version);
+    assert_eq!(cid.codec(), prefix.codec);
+    assert_eq!(cid.hash().digest(), digest);
+    assert_eq!(cid.hash().digest().len(), prefix.mh_len);
+}
+
+#[test]
+fn test_hash_trimmed() {
+    let data: Vec<u8> = vec![1, 2, 3];
+    let mh = Sha2_256::digest(&data);
+    let digest = &mh.digest();
+    let prefix = Prefix {
+        version: Version::V0,
+        codec: Codec::DagProtobuf,
+        mh_type: multihash::Code::Sha2_256,
+        // Use a length smaller than the hash digest
+        mh_len: 16,
+    };
+    let cid = Cid::new_from_prefix(&prefix, digest);
+    assert_eq!(cid.version(), prefix.version);
+    assert_eq!(cid.codec(), prefix.codec);
+    assert_eq!(cid.hash().digest(), &digest[0..prefix.mh_len]);
+    assert_eq!(cid.hash().digest().len(), prefix.mh_len);
 }
 
 #[test]
