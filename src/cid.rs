@@ -9,43 +9,47 @@ use crate::error::{Error, Result};
 use crate::version::Version;
 
 /// A CID with the default Multihash code table
-pub type Cid = CidGeneric<Code>;
+pub type Cid = CidGeneric<Code, Codec>;
 
 /// Representation of a CID.
 ///
 /// Usually you would use `Cid` instead, unless you have a custom Multihash code table
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
-pub struct CidGeneric<T>
+pub struct CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64>,
 {
     /// The version of CID.
     version: Version,
     /// The codec of CID.
-    codec: Codec,
+    codec: U,
     /// The multihash of CID.
     hash: MultihashGeneric<T>,
 }
 
-impl<T> CidGeneric<T>
+impl<T, U> CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     /// Create a new CIDv0.
-    pub fn new_v0(hash: MultihashGeneric<T>) -> Result<CidGeneric<T>> {
+    pub fn new_v0(hash: MultihashGeneric<T>) -> Result<Self> {
         if hash.algorithm().into() != u64::from(Code::Sha2_256) {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
             version: Version::V0,
-            codec: Codec::DagProtobuf,
+            // Convert the code of `DagProtobuf` into the given code table
+            codec: U::try_from(Codec::DagProtobuf.into()).map_err(|_| Error::UnknownCodec)?,
             hash,
         })
     }
 
     /// Create a new CIDv1.
-    pub fn new_v1(codec: Codec, hash: MultihashGeneric<T>) -> CidGeneric<T> {
+    pub fn new_v1(codec: U, hash: MultihashGeneric<T>) -> Self {
         Self {
             version: Version::V1,
             codec,
@@ -54,10 +58,10 @@ where
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: Codec, hash: MultihashGeneric<T>) -> Result<CidGeneric<T>> {
+    pub fn new(version: Version, codec: U, hash: MultihashGeneric<T>) -> Result<Self> {
         match version {
             Version::V0 => {
-                if codec != Codec::DagProtobuf {
+                if codec.into() != u64::from(Codec::DagProtobuf) {
                     return Err(Error::InvalidCidV0Codec);
                 }
                 Self::new_v0(hash)
@@ -72,7 +76,10 @@ where
     }
 
     /// Returns the cid codec.
-    pub fn codec(&self) -> Codec {
+    pub fn codec(&self) -> U
+    where
+        U: Copy,
+    {
         self.codec
     }
 
@@ -85,7 +92,10 @@ where
         Base::Base58Btc.encode(self.hash.as_bytes())
     }
 
-    fn to_string_v1(&self) -> String {
+    fn to_string_v1(&self) -> String
+    where
+        U: Copy,
+    {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
 
@@ -93,7 +103,10 @@ where
         self.hash.to_vec()
     }
 
-    fn to_bytes_v1(&self) -> Vec<u8> {
+    fn to_bytes_v1(&self) -> Vec<u8>
+    where
+        U: Copy,
+    {
         let mut res = Vec::with_capacity(16);
 
         let mut buf = varint_encode::u64_buffer();
@@ -108,7 +121,10 @@ where
     }
 
     /// Convert CID to encoded bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8>
+    where
+        U: Copy,
+    {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
@@ -117,20 +133,24 @@ where
 }
 
 #[allow(clippy::derive_hash_xor_eq)]
-impl<T> std::hash::Hash for CidGeneric<T>
+impl<T, U> std::hash::Hash for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64> + Copy,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.to_bytes().hash(state);
     }
 }
 
-impl<T> std::fmt::Display for CidGeneric<T>
+impl<T, U> std::fmt::Display for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64> + Copy,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let output = match self.version {
@@ -141,10 +161,12 @@ where
     }
 }
 
-impl<T> std::str::FromStr for CidGeneric<T>
+impl<T, U> std::str::FromStr for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Err = Error;
 
@@ -153,10 +175,12 @@ where
     }
 }
 
-impl<T> TryFrom<String> for CidGeneric<T>
+impl<T, U> TryFrom<String> for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -165,10 +189,12 @@ where
     }
 }
 
-impl<T> TryFrom<&str> for CidGeneric<T>
+impl<T, U> TryFrom<&str> for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -195,10 +221,12 @@ where
     }
 }
 
-impl<T> TryFrom<Vec<u8>> for CidGeneric<T>
+impl<T, U> TryFrom<Vec<u8>> for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -207,10 +235,12 @@ where
     }
 }
 
-impl<T> TryFrom<&[u8]> for CidGeneric<T>
+impl<T, U> TryFrom<&[u8]> for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64>,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64>,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -223,7 +253,7 @@ where
             let version = Version::try_from(raw_version)?;
 
             let (raw_codec, hash) = varint_decode::u64(&remain)?;
-            let codec = Codec::try_from(raw_codec)?;
+            let codec = U::try_from(raw_codec).map_err(|_| Error::UnknownCodec)?;
 
             let mh = MultihashRefGeneric::from_slice(hash)?.to_owned();
 
@@ -232,32 +262,38 @@ where
     }
 }
 
-impl<T> From<&CidGeneric<T>> for CidGeneric<T>
+impl<T, U> From<&CidGeneric<T, U>> for CidGeneric<T, U>
 where
     T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64> + Copy,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: &CidGeneric<T>) -> Self {
+    fn from(cid: &CidGeneric<T, U>) -> Self {
         cid.to_owned()
     }
 }
 
-impl<T> From<CidGeneric<T>> for Vec<u8>
+impl<T, U> From<CidGeneric<T, U>> for Vec<u8>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64> + Copy,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: CidGeneric<T>) -> Self {
+    fn from(cid: CidGeneric<T, U>) -> Self {
         cid.to_bytes()
     }
 }
 
-impl<T> From<CidGeneric<T>> for String
+impl<T, U> From<CidGeneric<T, U>> for String
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
+    U: Into<u64> + TryFrom<u64> + Copy,
+    <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: CidGeneric<T>) -> Self {
+    fn from(cid: CidGeneric<T, U>) -> Self {
         cid.to_string()
     }
 }
