@@ -28,3 +28,6 @@ multihash = { version = "0.10.1", features = ["test"] }
 
 [features]
 test = ["quickcheck", "rand"]
+
+[patch.crates-io]
+multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "master" }
