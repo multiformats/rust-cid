@@ -17,8 +17,8 @@ pub type Cid = CidGeneric<Code, Codec>;
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub struct CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
-    U: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
+    U: Into<u64> + TryFrom<u64> + Copy,
 {
     /// The version of CID.
     version: Version,
@@ -30,9 +30,9 @@ where
 
 impl<T, U> CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     /// Create a new CIDv0.
@@ -76,10 +76,7 @@ where
     }
 
     /// Returns the cid codec.
-    pub fn codec(&self) -> U
-    where
-        U: Copy,
-    {
+    pub fn codec(&self) -> U {
         self.codec
     }
 
@@ -92,10 +89,7 @@ where
         Base::Base58Btc.encode(self.hash.as_bytes())
     }
 
-    fn to_string_v1(&self) -> String
-    where
-        U: Copy,
-    {
+    fn to_string_v1(&self) -> String {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
 
@@ -103,10 +97,7 @@ where
         self.hash.to_vec()
     }
 
-    fn to_bytes_v1(&self) -> Vec<u8>
-    where
-        U: Copy,
-    {
+    fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
 
         let mut buf = varint_encode::u64_buffer();
@@ -121,10 +112,7 @@ where
     }
 
     /// Convert CID to encoded bytes.
-    pub fn to_bytes(&self) -> Vec<u8>
-    where
-        U: Copy,
-    {
+    pub fn to_bytes(&self) -> Vec<u8> {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
@@ -163,9 +151,9 @@ where
 
 impl<T, U> std::str::FromStr for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Err = Error;
@@ -177,9 +165,9 @@ where
 
 impl<T, U> TryFrom<String> for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
@@ -191,9 +179,9 @@ where
 
 impl<T, U> TryFrom<&str> for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
@@ -223,9 +211,9 @@ where
 
 impl<T, U> TryFrom<Vec<u8>> for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
@@ -237,9 +225,9 @@ where
 
 impl<T, U> TryFrom<&[u8]> for CidGeneric<T, U>
 where
-    T: Into<u64> + TryFrom<u64>,
+    T: Into<u64> + TryFrom<u64> + Copy,
     <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64>,
+    U: Into<u64> + TryFrom<u64> + Copy,
     <U as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
