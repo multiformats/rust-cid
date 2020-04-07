@@ -9,47 +9,47 @@ use crate::error::{Error, Result};
 use crate::version::Version;
 
 /// A CID with the default Multihash code table
-pub type Cid = CidGeneric<Code, Codec>;
+pub type Cid = CidGeneric<Codec, Code>;
 
 /// Representation of a CID.
 ///
 /// Usually you would use `Cid` instead, unless you have a custom Multihash code table
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
-pub struct CidGeneric<T, U>
+pub struct CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    U: Into<u64> + TryFrom<u64> + Copy,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    H: Into<u64> + TryFrom<u64> + Copy,
 {
     /// The version of CID.
     version: Version,
     /// The codec of CID.
-    codec: U,
+    codec: C,
     /// The multihash of CID.
-    hash: MultihashGeneric<T>,
+    hash: MultihashGeneric<H>,
 }
 
-impl<T, U> CidGeneric<T, U>
+impl<C, H> CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     /// Create a new CIDv0.
-    pub fn new_v0(hash: MultihashGeneric<T>) -> Result<Self> {
+    pub fn new_v0(hash: MultihashGeneric<H>) -> Result<Self> {
         if hash.algorithm().into() != u64::from(Code::Sha2_256) {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
             version: Version::V0,
             // Convert the code of `DagProtobuf` into the given code table
-            codec: U::try_from(Codec::DagProtobuf.into()).map_err(|_| Error::UnknownCodec)?,
+            codec: C::try_from(Codec::DagProtobuf.into()).map_err(|_| Error::UnknownCodec)?,
             hash,
         })
     }
 
     /// Create a new CIDv1.
-    pub fn new_v1(codec: U, hash: MultihashGeneric<T>) -> Self {
+    pub fn new_v1(codec: C, hash: MultihashGeneric<H>) -> Self {
         Self {
             version: Version::V1,
             codec,
@@ -58,7 +58,7 @@ where
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: U, hash: MultihashGeneric<T>) -> Result<Self> {
+    pub fn new(version: Version, codec: C, hash: MultihashGeneric<H>) -> Result<Self> {
         match version {
             Version::V0 => {
                 if codec.into() != u64::from(Codec::DagProtobuf) {
@@ -76,12 +76,12 @@ where
     }
 
     /// Returns the cid codec.
-    pub fn codec(&self) -> U {
+    pub fn codec(&self) -> C {
         self.codec
     }
 
     /// Returns the cid multihash.
-    pub fn hash(&self) -> MultihashRefGeneric<T> {
+    pub fn hash(&self) -> MultihashRefGeneric<H> {
         self.hash.as_ref()
     }
 
@@ -121,24 +121,24 @@ where
 }
 
 #[allow(clippy::derive_hash_xor_eq)]
-impl<T, U> std::hash::Hash for CidGeneric<T, U>
+impl<C, H> std::hash::Hash for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<T: std::hash::Hasher>(&self, state: &mut T) {
         self.to_bytes().hash(state);
     }
 }
 
-impl<T, U> std::fmt::Display for CidGeneric<T, U>
+impl<C, H> std::fmt::Display for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let output = match self.version {
@@ -149,12 +149,12 @@ where
     }
 }
 
-impl<T, U> std::str::FromStr for CidGeneric<T, U>
+impl<C, H> std::str::FromStr for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Err = Error;
 
@@ -163,12 +163,12 @@ where
     }
 }
 
-impl<T, U> TryFrom<String> for CidGeneric<T, U>
+impl<C, H> TryFrom<String> for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -177,12 +177,12 @@ where
     }
 }
 
-impl<T, U> TryFrom<&str> for CidGeneric<T, U>
+impl<C, H> TryFrom<&str> for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -209,12 +209,12 @@ where
     }
 }
 
-impl<T, U> TryFrom<Vec<u8>> for CidGeneric<T, U>
+impl<C, H> TryFrom<Vec<u8>> for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -223,12 +223,12 @@ where
     }
 }
 
-impl<T, U> TryFrom<&[u8]> for CidGeneric<T, U>
+impl<C, H> TryFrom<&[u8]> for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
     type Error = Error;
 
@@ -241,7 +241,7 @@ where
             let version = Version::try_from(raw_version)?;
 
             let (raw_codec, hash) = varint_decode::u64(&remain)?;
-            let codec = U::try_from(raw_codec).map_err(|_| Error::UnknownCodec)?;
+            let codec = C::try_from(raw_codec).map_err(|_| Error::UnknownCodec)?;
 
             let mh = MultihashRefGeneric::from_slice(hash)?.to_owned();
 
@@ -250,38 +250,38 @@ where
     }
 }
 
-impl<T, U> From<&CidGeneric<T, U>> for CidGeneric<T, U>
+impl<C, H> From<&CidGeneric<C, H>> for CidGeneric<C, H>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: &CidGeneric<T, U>) -> Self {
+    fn from(cid: &CidGeneric<C, H>) -> Self {
         cid.to_owned()
     }
 }
 
-impl<T, U> From<CidGeneric<T, U>> for Vec<u8>
+impl<C, H> From<CidGeneric<C, H>> for Vec<u8>
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: CidGeneric<T, U>) -> Self {
+    fn from(cid: CidGeneric<C, H>) -> Self {
         cid.to_bytes()
     }
 }
 
-impl<T, U> From<CidGeneric<T, U>> for String
+impl<C, H> From<CidGeneric<C, H>> for String
 where
-    T: Into<u64> + TryFrom<u64> + Copy,
-    <T as TryFrom<u64>>::Error: std::fmt::Debug,
-    U: Into<u64> + TryFrom<u64> + Copy,
-    <U as TryFrom<u64>>::Error: std::fmt::Debug,
+    C: Into<u64> + TryFrom<u64> + Copy,
+    <C as TryFrom<u64>>::Error: std::fmt::Debug,
+    H: Into<u64> + TryFrom<u64> + Copy,
+    <H as TryFrom<u64>>::Error: std::fmt::Debug,
 {
-    fn from(cid: CidGeneric<T, U>) -> Self {
+    fn from(cid: CidGeneric<C, H>) -> Self {
         cid.to_string()
     }
 }
