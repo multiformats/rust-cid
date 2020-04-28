@@ -18,6 +18,8 @@ pub enum Error {
     InvalidCidV0Codec,
     /// Invalid CIDv0 multihash.
     InvalidCidV0Multihash,
+    /// Invalid CIDv0 base encoding.
+    InvalidCidV0Base,
     /// Varint decode failure.
     VarIntDecodeError,
 }
@@ -34,6 +36,7 @@ impl fmt::Display for Error {
             InvalidCidVersion => "Unrecognized CID version",
             InvalidCidV0Codec => "CIDv0 requires a DagPB codec",
             InvalidCidV0Multihash => "CIDv0 requires a Sha-256 multihash",
+            InvalidCidV0Base => "CIDv0 requires a Base58 base",
             VarIntDecodeError => "Failed to decode unsigned varint format",
         };
 
