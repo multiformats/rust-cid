@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use multibase::Base;
+use multibase::{encode as base_encode, Base};
 use multihash::{Code, MultihashGeneric, MultihashRefGeneric};
 use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
@@ -114,6 +114,32 @@ where
         match self.version {
             Version::V0 => self.to_bytes_v0(),
             Version::V1 => self.to_bytes_v1(),
+        }
+    }
+
+    /// Convert CID into a multibase encoded string
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use cid::{Cid, Codec};
+    /// use multibase::Base;
+    /// use multihash::Sha2_256;
+    ///
+    /// let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    /// let encoded = cid.to_string_of_base(Base::Base64).unwrap();
+    /// assert_eq!(encoded, "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu");
+    /// ```
+    pub fn to_string_of_base(&self, base: Base) -> Result<String> {
+        match self.version {
+            Version::V0 => {
+                if base == Base::Base58Btc {
+                    Ok(self.to_string_v0())
+                } else {
+                    Err(Error::InvalidCidV0Base)
+                }
+            }
+            Version::V1 => Ok(base_encode(base, self.to_bytes())),
         }
     }
 }

@@ -3,6 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
 use cid::{Cid, Codec, Error, Version};
+use multibase::Base;
 use multihash::Sha2_256;
 
 #[test]
@@ -90,4 +91,47 @@ fn test_base32() {
     assert_eq!(cid.version(), Version::V1);
     assert_eq!(cid.codec(), Codec::Raw);
     assert_eq!(cid.hash(), Sha2_256::digest(b"foo"));
+}
+
+#[test]
+fn to_string() {
+    let expected_cid = "bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy";
+    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    assert_eq!(cid.to_string(), expected_cid);
+}
+
+#[test]
+fn to_string_of_base32() {
+    let expected_cid = "bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy";
+    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    assert_eq!(
+        cid.to_string_of_base(Base::Base32Lower).unwrap(),
+        expected_cid
+    );
+}
+
+#[test]
+fn to_string_of_base64() {
+    let expected_cid = "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu";
+    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    assert_eq!(cid.to_string_of_base(Base::Base64).unwrap(), expected_cid);
+}
+
+#[test]
+fn to_string_of_base58_v0() {
+    let expected_cid = "QmRJzsvyCQyizr73Gmms8ZRtvNxmgqumxc2KUp71dfEmoj";
+    let cid = Cid::new_v0(Sha2_256::digest(b"foo")).unwrap();
+    assert_eq!(
+        cid.to_string_of_base(Base::Base58Btc).unwrap(),
+        expected_cid
+    );
+}
+
+#[test]
+fn to_string_of_base_v0_error() {
+    let cid = Cid::new_v0(Sha2_256::digest(b"foo")).unwrap();
+    assert_eq!(
+        cid.to_string_of_base(Base::Base16Upper),
+        Err(Error::InvalidCidV0Base)
+    );
 }
