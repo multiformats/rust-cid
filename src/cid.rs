@@ -94,30 +94,52 @@ where
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
 
-    fn to_bytes_v0(&self) -> Vec<u8> {
-        self.hash.to_vec()
+    fn copy_to_slice_v0(&self, buffer: &mut [u8]) -> usize {
+        let hash_end = self.hash.len();
+        (&mut buffer[..hash_end]).copy_from_slice(&self.hash);
+        hash_end
     }
 
-    fn to_bytes_v1(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(16);
-
+    fn copy_to_slice_v1(&self, buffer: &mut [u8]) -> usize {
         let mut buf = varint_encode::u64_buffer();
         let version = varint_encode::u64(self.version.into(), &mut buf);
-        res.extend_from_slice(version);
+        let version_end = version.len();
+
         let mut buf = varint_encode::u64_buffer();
         let codec = varint_encode::u64(self.codec.into(), &mut buf);
-        res.extend_from_slice(codec);
-        res.extend_from_slice(&self.hash);
+        let codec_end = version_end + codec.len();
 
-        res
+        let hash_end = codec_end + self.hash.len();
+
+        (&mut buffer[..version_end]).copy_from_slice(&version);
+        (&mut buffer[version_end..codec_end]).copy_from_slice(&codec);
+        (&mut buffer[codec_end..hash_end]).copy_from_slice(&self.hash);
+
+        hash_end
+    }
+
+    /// Copy encoded bytes into buffer.
+    ///
+    /// Will panic if the buffer is too small.
+    pub fn copy_to_slice(&self, buffer: &mut [u8]) -> usize {
+        match self.version {
+            Version::V0 => self.copy_to_slice_v0(buffer),
+            Version::V1 => self.copy_to_slice_v1(buffer),
+        }
+    }
+
+    /// Max required buffer length.
+    pub fn max_len(&self) -> usize {
+        let varint_len = varint_encode::u64_buffer().len();
+        varint_len * 2 + self.hash.len()
     }
 
     /// Convert CID to encoded bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        match self.version {
-            Version::V0 => self.to_bytes_v0(),
-            Version::V1 => self.to_bytes_v1(),
-        }
+    pub fn to_bytes(&self) -> Box<[u8]> {
+        let mut bytes = vec![0u8; self.max_len()];
+        let len = self.copy_to_slice(&mut bytes);
+        bytes.truncate(len);
+        bytes.into_boxed_slice()
     }
 }
 
