@@ -135,11 +135,10 @@ where
     }
 
     /// Convert CID to encoded bytes.
-    pub fn to_bytes(&self) -> Box<[u8]> {
-        let mut bytes = vec![0u8; self.max_len()];
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = [0u8; 128];
         let len = self.copy_to_slice(&mut bytes);
-        bytes.truncate(len);
-        bytes.into_boxed_slice()
+        Box::new(&bytes[..len]).to_vec()
     }
 }
 
