@@ -39,14 +39,15 @@ Then run `cargo build`.
 ```rust
 use cid::{Cid, Codec, Version};
 use multihash::Sha2_256;
+use std::convert::TryFrom;
 
 fn main() {
     let h = Sha2_256::digest(b"beep boop");
 
-    let cid = Cid::new(Version::V1, Codec::DagProtobuf, h);
+    let cid = Cid::new(Version::V1, Codec::DagProtobuf, h).unwrap();
 
     let data = cid.to_bytes();
-    let out = Cid::from(data).unwrap();
+    let out = Cid::try_from(data).unwrap();
 
     assert_eq!(cid, out);
 }
