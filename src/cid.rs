@@ -138,7 +138,7 @@ where
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = [0u8; 128];
         let len = self.copy_to_slice(&mut bytes);
-        Box::new(&bytes[..len]).to_vec()
+        Box::<[u8]>::from(&bytes[..len]).into_vec()
     }
 }
 
