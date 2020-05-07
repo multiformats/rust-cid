@@ -50,6 +50,9 @@ fn main() {
     let out = Cid::try_from(data).unwrap();
 
     assert_eq!(cid, out);
+
+    let cid_string = cid.to_string();
+    /// bafybeieq5jui4j25lacwomsqgjeswwl3y5zcdrresptwgmfylxo2depppq
 }
 ```
 ## Maintainers
