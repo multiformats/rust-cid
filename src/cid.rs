@@ -119,6 +119,14 @@ where
             Version::V1 => self.to_bytes_v1(),
         }
     }
+
+    /// Convert CID to String
+    pub fn to_string(&self) -> String {
+        match self.version {
+            Version::V0 => self.to_string_v0(),
+            Version::V1 => self.to_string_v1(),
+        }
+    }
 }
 
 #[allow(clippy::derive_hash_xor_eq)]
