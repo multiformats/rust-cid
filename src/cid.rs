@@ -1,5 +1,4 @@
 use std::convert::TryFrom;
-use std::fmt;
 
 use multibase::Base;
 use multihash::{Code, MultihashGeneric, MultihashRefGeneric};
