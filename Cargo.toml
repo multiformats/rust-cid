@@ -14,7 +14,7 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [dependencies]
-multihash = "0.11"
+multihash = "0.11.2"
 multibase = "0.8.0"
 unsigned-varint = "0.3"
 
