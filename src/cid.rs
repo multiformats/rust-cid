@@ -1,5 +1,4 @@
 use std::convert::TryFrom;
-use std::fmt;
 
 use multibase::Base;
 use multihash::{Code, MultihashGeneric, MultihashRefGeneric};
@@ -32,9 +31,7 @@ where
 impl<C, H> CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     /// Create a new CIDv0.
     pub fn new_v0(hash: MultihashGeneric<H>) -> Result<Self> {
@@ -125,9 +122,7 @@ where
 impl<C, H> std::hash::Hash for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     fn hash<T: std::hash::Hasher>(&self, state: &mut T) {
         self.to_bytes().hash(state);
@@ -137,9 +132,7 @@ where
 impl<C, H> std::fmt::Display for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let output = match self.version {
@@ -153,9 +146,7 @@ where
 impl<C, H> std::str::FromStr for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     type Err = Error;
 
@@ -167,9 +158,7 @@ where
 impl<C, H> TryFrom<String> for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     type Error = Error;
 
@@ -181,9 +170,7 @@ where
 impl<C, H> TryFrom<&str> for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     type Error = Error;
 
@@ -213,9 +200,7 @@ where
 impl<C, H> TryFrom<Vec<u8>> for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     type Error = Error;
 
@@ -227,9 +212,7 @@ where
 impl<C, H> TryFrom<&[u8]> for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     type Error = Error;
 
@@ -254,9 +237,7 @@ where
 impl<C, H> From<&CidGeneric<C, H>> for CidGeneric<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     fn from(cid: &CidGeneric<C, H>) -> Self {
         cid.to_owned()
@@ -266,9 +247,7 @@ where
 impl<C, H> From<CidGeneric<C, H>> for Vec<u8>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     fn from(cid: CidGeneric<C, H>) -> Self {
         cid.to_bytes()
@@ -278,9 +257,7 @@ where
 impl<C, H> From<CidGeneric<C, H>> for String
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    <C as TryFrom<u64>>::Error: fmt::Debug,
     H: Into<u64> + TryFrom<u64> + Copy,
-    <H as TryFrom<u64>>::Error: fmt::Debug,
 {
     fn from(cid: CidGeneric<C, H>) -> Self {
         cid.to_string()
