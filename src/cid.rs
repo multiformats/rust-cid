@@ -1,41 +1,34 @@
-use std::convert::TryFrom;
-
-use multibase::{encode as base_encode, Base};
-use multihash::{Code, MultihashGeneric, MultihashRefGeneric};
-use unsigned_varint::{decode as varint_decode, encode as varint_encode};
-
 use crate::codec::Codec;
 use crate::error::{Error, Result};
 use crate::version::Version;
-
-/// A CID with the default Multihash code table
-pub type Cid = CidGeneric<Codec, Code>;
+use core::convert::TryFrom;
+use multihash::{MultihashCode, MultihashDigest};
 
 /// Representation of a CID.
 ///
 /// Usually you would use `Cid` instead, unless you have a custom Multihash code table
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
-pub struct CidGeneric<C, H>
+pub struct Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     /// The version of CID.
     version: Version,
     /// The codec of CID.
     codec: C,
     /// The multihash of CID.
-    hash: MultihashGeneric<H>,
+    hash: H::Multihash,
 }
 
-impl<C, H> CidGeneric<C, H>
+impl<C, H> Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     /// Create a new CIDv0.
-    pub fn new_v0(hash: MultihashGeneric<H>) -> Result<Self> {
-        if hash.algorithm().into() != u64::from(Code::Sha2_256) {
+    pub fn new_v0(hash: H::Multihash) -> Result<Self> {
+        if hash.code().into() != 0x12 {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
@@ -47,7 +40,7 @@ where
     }
 
     /// Create a new CIDv1.
-    pub fn new_v1(codec: C, hash: MultihashGeneric<H>) -> Self {
+    pub fn new_v1(codec: C, hash: H::Multihash) -> Self {
         Self {
             version: Version::V1,
             codec,
@@ -56,7 +49,7 @@ where
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: C, hash: MultihashGeneric<H>) -> Result<Self> {
+    pub fn new(version: Version, codec: C, hash: H::Multihash) -> Result<Self> {
         match version {
             Version::V0 => {
                 if codec.into() != u64::from(Codec::DagProtobuf) {
@@ -79,42 +72,67 @@ where
     }
 
     /// Returns the cid multihash.
-    pub fn hash(&self) -> MultihashRefGeneric<H> {
-        self.hash.as_ref()
+    pub fn hash(&self) -> &H::Multihash {
+        &self.hash
     }
 
-    fn to_string_v0(&self) -> String {
-        Base::Base58Btc.encode(self.hash.as_bytes())
+    /// Reads the bytes from a byte stream.
+    #[cfg(feature = "std")]
+    pub fn read_bytes<R: std::io::Read>(mut r: R) -> Result<Self> {
+        use unsigned_varint::io::read_u64;
+        //if Version::is_v0_binary(bytes) {
+        //    let mh = H::Multihash::read(r)?;
+        //    Self::new_v0(mh)
+        //} else {
+        let version = Version::try_from(read_u64(&mut r)?)?;
+        let codec = C::try_from(read_u64(&mut r)?).map_err(|_| Error::UnknownCodec)?;
+        let mh = H::Multihash::read(r)?;
+        Self::new(version, codec, mh)
+        //}
     }
 
-    fn to_string_v1(&self) -> String {
-        multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
+    #[cfg(feature = "std")]
+    fn write_bytes_v1<W: std::io::Write>(&self, mut w: W) -> Result<()> {
+        use unsigned_varint::encode as varint_encode;
+
+        let mut version_buf = varint_encode::u64_buffer();
+        let version = varint_encode::u64(self.version.into(), &mut version_buf);
+
+        let mut codec_buf = varint_encode::u64_buffer();
+        let codec = varint_encode::u64(self.codec.into(), &mut codec_buf);
+
+        w.write_all(version)?;
+        w.write_all(codec)?;
+        self.hash.write(&mut w)?;
+        Ok(())
     }
 
-    fn to_bytes_v0(&self) -> Vec<u8> {
-        self.hash.to_vec()
-    }
-
-    fn to_bytes_v1(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(16);
-
-        let mut buf = varint_encode::u64_buffer();
-        let version = varint_encode::u64(self.version.into(), &mut buf);
-        res.extend_from_slice(version);
-        let mut buf = varint_encode::u64_buffer();
-        let codec = varint_encode::u64(self.codec.into(), &mut buf);
-        res.extend_from_slice(codec);
-        res.extend_from_slice(&self.hash);
-
-        res
-    }
-
-    /// Convert CID to encoded bytes.
-    pub fn to_bytes(&self) -> Vec<u8> {
+    /// Writes the bytes to a byte stream.
+    #[cfg(feature = "std")]
+    pub fn write_bytes<W: std::io::Write>(&self, w: W) -> Result<()> {
         match self.version {
-            Version::V0 => self.to_bytes_v0(),
-            Version::V1 => self.to_bytes_v1(),
+            Version::V0 => self.hash.write(w)?,
+            Version::V1 => self.write_bytes_v1(w)?,
         }
+        Ok(())
+    }
+
+    /// Returns the encoded bytes of the `Cid`.
+    #[cfg(feature = "std")]
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+        self.write_bytes(&mut bytes).unwrap();
+        bytes
+    }
+
+    #[cfg(feature = "std")]
+    fn to_string_v0(&self) -> String {
+        multibase::Base::Base58Btc.encode(self.hash.to_bytes())
+    }
+
+    #[cfg(feature = "std")]
+    fn to_string_v1(&self) -> String {
+        multibase::encode(multibase::Base::Base32Lower, self.to_bytes().as_slice())
     }
 
     /// Convert CID into a multibase encoded string
@@ -124,43 +142,46 @@ where
     /// ```
     /// use cid::{Cid, Codec};
     /// use multibase::Base;
-    /// use multihash::Sha2_256;
+    /// use multihash::{Code, MultihashCode};
     ///
-    /// let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    /// let cid = Cid::<Codec, Code>::new_v1(Codec::Raw, Code::Sha2_256.digest(b"foo"));
     /// let encoded = cid.to_string_of_base(Base::Base64).unwrap();
     /// assert_eq!(encoded, "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu");
     /// ```
-    pub fn to_string_of_base(&self, base: Base) -> Result<String> {
+    #[cfg(feature = "std")]
+    pub fn to_string_of_base(&self, base: multibase::Base) -> Result<String> {
         match self.version {
             Version::V0 => {
-                if base == Base::Base58Btc {
+                if base == multibase::Base::Base58Btc {
                     Ok(self.to_string_v0())
                 } else {
                     Err(Error::InvalidCidV0Base)
                 }
             }
-            Version::V1 => Ok(base_encode(base, self.to_bytes())),
+            Version::V1 => Ok(multibase::encode(base, self.to_bytes())),
         }
     }
 }
 
+#[cfg(feature = "std")]
 #[allow(clippy::derive_hash_xor_eq)]
-impl<C, H> std::hash::Hash for CidGeneric<C, H>
+impl<C, H> core::hash::Hash for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
-    fn hash<T: std::hash::Hasher>(&self, state: &mut T) {
+    fn hash<T: core::hash::Hasher>(&self, state: &mut T) {
         self.to_bytes().hash(state);
     }
 }
 
-impl<C, H> std::fmt::Display for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> core::fmt::Display for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         let output = match self.version {
             Version::V0 => self.to_string_v0(),
             Version::V1 => self.to_string_v1(),
@@ -169,22 +190,24 @@ where
     }
 }
 
-impl<C, H> std::str::FromStr for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> core::str::FromStr for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     type Err = Error;
 
     fn from_str(cid_str: &str) -> Result<Self> {
-        CidGeneric::try_from(cid_str)
+        Self::try_from(cid_str)
     }
 }
 
-impl<C, H> TryFrom<String> for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> TryFrom<String> for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     type Error = Error;
 
@@ -193,10 +216,11 @@ where
     }
 }
 
-impl<C, H> TryFrom<&str> for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> TryFrom<&str> for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     type Error = Error;
 
@@ -213,7 +237,7 @@ where
         }
 
         let decoded = if Version::is_v0_str(hash) {
-            Base::Base58Btc.decode(hash)?
+            multibase::Base::Base58Btc.decode(hash)?
         } else {
             let (_, decoded) = multibase::decode(hash)?;
             decoded
@@ -223,10 +247,11 @@ where
     }
 }
 
-impl<C, H> TryFrom<Vec<u8>> for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> TryFrom<Vec<u8>> for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     type Error = Error;
 
@@ -235,57 +260,47 @@ where
     }
 }
 
-impl<C, H> TryFrom<&[u8]> for CidGeneric<C, H>
+#[cfg(feature = "std")]
+impl<C, H> TryFrom<&[u8]> for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Self> {
-        if Version::is_v0_binary(bytes) {
-            let mh = MultihashRefGeneric::from_slice(bytes)?.to_owned();
-            CidGeneric::new_v0(mh)
-        } else {
-            let (raw_version, remain) = varint_decode::u64(&bytes)?;
-            let version = Version::try_from(raw_version)?;
-
-            let (raw_codec, hash) = varint_decode::u64(&remain)?;
-            let codec = C::try_from(raw_codec).map_err(|_| Error::UnknownCodec)?;
-
-            let mh = MultihashRefGeneric::from_slice(hash)?.to_owned();
-
-            CidGeneric::new(version, codec, mh)
-        }
+    fn try_from(mut bytes: &[u8]) -> Result<Self> {
+        Self::read_bytes(&mut bytes)
     }
 }
 
-impl<C, H> From<&CidGeneric<C, H>> for CidGeneric<C, H>
+impl<C, H> From<&Cid<C, H>> for Cid<C, H>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
-    fn from(cid: &CidGeneric<C, H>) -> Self {
-        cid.to_owned()
+    fn from(cid: &Cid<C, H>) -> Self {
+        cid.clone()
     }
 }
 
-impl<C, H> From<CidGeneric<C, H>> for Vec<u8>
+#[cfg(feature = "std")]
+impl<C, H> From<Cid<C, H>> for Vec<u8>
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
-    fn from(cid: CidGeneric<C, H>) -> Self {
+    fn from(cid: Cid<C, H>) -> Self {
         cid.to_bytes()
     }
 }
 
-impl<C, H> From<CidGeneric<C, H>> for String
+#[cfg(feature = "std")]
+impl<C, H> From<Cid<C, H>> for String
 where
     C: Into<u64> + TryFrom<u64> + Copy,
-    H: Into<u64> + TryFrom<u64> + Copy,
+    H: MultihashCode,
 {
-    fn from(cid: CidGeneric<C, H>) -> Self {
+    fn from(cid: Cid<C, H>) -> Self {
         cid.to_string()
     }
 }

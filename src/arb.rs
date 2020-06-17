@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use multihash::Multihash;
+use multihash::{Code, Multihash, MultihashCode};
 use quickcheck::{Arbitrary, Gen};
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -53,12 +53,12 @@ impl Arbitrary for Version {
     }
 }
 
-impl Arbitrary for Cid {
+impl Arbitrary for Cid<Codec, Code> {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let version: Version = Arbitrary::arbitrary(g);
         if version == Version::V0 {
             let data: Vec<u8> = Arbitrary::arbitrary(g);
-            let hash = multihash::Sha2_256::digest(&data);
+            let hash = Code::Sha2_256.digest(&data);
             Cid::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
         } else {
             let codec: Codec = Arbitrary::arbitrary(g);

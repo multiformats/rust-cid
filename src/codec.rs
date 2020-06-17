@@ -1,6 +1,5 @@
-use std::convert::TryFrom;
-
 use crate::error::{Error, Result};
+use core::convert::TryFrom;
 
 macro_rules! build_codec_enum {
     {$( #[$attr:meta] $code:expr => $codec:ident, )*} => {

@@ -1,6 +1,5 @@
-use std::convert::TryFrom;
-
 use crate::error::{Error, Result};
+use core::convert::TryFrom;
 
 /// The version of the CID.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
