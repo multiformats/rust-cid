@@ -13,6 +13,6 @@ mod version;
 mod arb;
 
 pub use self::cid::Cid;
-pub use self::codec::Codec;
+pub use self::codec::*;
 pub use self::error::{Error, Result};
 pub use self::version::Version;

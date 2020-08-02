@@ -1,58 +1,50 @@
-use crate::codec::Codec;
+use crate::codec::DAG_PROTOBUF;
 use crate::error::{Error, Result};
 use crate::version::Version;
 use core::convert::TryFrom;
-use multihash::{MultihashCode, MultihashDigest};
+use multihash::RawMultihash;
 
 /// Representation of a CID.
 ///
 /// Usually you would use `Cid` instead, unless you have a custom Multihash code table
-#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
-pub struct Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct Cid {
     /// The version of CID.
     version: Version,
     /// The codec of CID.
-    codec: C,
+    codec: u64,
     /// The multihash of CID.
-    hash: H::Multihash,
+    hash: RawMultihash,
 }
 
-impl<C, H> Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl Cid {
     /// Create a new CIDv0.
-    pub fn new_v0(hash: H::Multihash) -> Result<Self> {
-        if hash.code().into() != 0x12 {
+    pub fn new_v0(hash: RawMultihash) -> Result<Self> {
+        if hash.code() != 0x12 && hash.size() != 0x20 {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
             version: Version::V0,
             // Convert the code of `DagProtobuf` into the given code table
-            codec: C::try_from(Codec::DagProtobuf.into()).map_err(|_| Error::UnknownCodec)?,
+            codec: DAG_PROTOBUF,
             hash,
         })
     }
 
     /// Create a new CIDv1.
-    pub fn new_v1(codec: C, hash: H::Multihash) -> Self {
+    pub fn new_v1(codec: u64, hash: RawMultihash) -> Self {
         Self {
             version: Version::V1,
-            codec,
+            codec: codec.into(),
             hash,
         }
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: C, hash: H::Multihash) -> Result<Self> {
+    pub fn new(version: Version, codec: u64, hash: RawMultihash) -> Result<Self> {
         match version {
             Version::V0 => {
-                if codec.into() != u64::from(Codec::DagProtobuf) {
+                if codec != DAG_PROTOBUF {
                     return Err(Error::InvalidCidV0Codec);
                 }
                 Self::new_v0(hash)
@@ -67,12 +59,12 @@ where
     }
 
     /// Returns the cid codec.
-    pub fn codec(&self) -> C {
+    pub fn codec(&self) -> u64 {
         self.codec
     }
 
     /// Returns the cid multihash.
-    pub fn hash(&self) -> &H::Multihash {
+    pub fn hash(&self) -> &RawMultihash {
         &self.hash
     }
 
@@ -80,15 +72,18 @@ where
     #[cfg(feature = "std")]
     pub fn read_bytes<R: std::io::Read>(mut r: R) -> Result<Self> {
         use unsigned_varint::io::read_u64;
-        //if Version::is_v0_binary(bytes) {
-        //    let mh = H::Multihash::read(r)?;
-        //    Self::new_v0(mh)
-        //} else {
-        let version = Version::try_from(read_u64(&mut r)?)?;
-        let codec = C::try_from(read_u64(&mut r)?).map_err(|_| Error::UnknownCodec)?;
-        let mh = H::Multihash::read(r)?;
-        Self::new(version, codec, mh)
-        //}
+        let version = read_u64(&mut r)?;
+        let codec = read_u64(&mut r)?;
+        if &[version, codec] == &[0x12, 0x20] {
+            let mut digest = [0u8; 32];
+            r.read_exact(&mut digest)?;
+            let mh = RawMultihash::wrap(version, &digest).unwrap();
+            Self::new_v0(mh)
+        } else {
+            let version = Version::try_from(version)?;
+            let mh = RawMultihash::read(r)?;
+            Self::new(version, codec, mh)
+        }
     }
 
     #[cfg(feature = "std")]
@@ -140,11 +135,12 @@ where
     /// # Example
     ///
     /// ```
-    /// use cid::{Cid, Codec};
+    /// use cid::{RAW, Cid};
     /// use multibase::Base;
-    /// use multihash::{Code, MultihashCode};
+    /// use multihash::{SHA2_256, Multihash, MultihashDigest};
     ///
-    /// let cid = Cid::<Codec, Code>::new_v1(Codec::Raw, Code::Sha2_256.digest(b"foo"));
+    /// let mh = Multihash::new(SHA2_256, b"foo").unwrap();
+    /// let cid = Cid::new_v1(RAW, mh.to_raw().unwrap());
     /// let encoded = cid.to_string_of_base(Base::Base64).unwrap();
     /// assert_eq!(encoded, "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu");
     /// ```
@@ -165,22 +161,14 @@ where
 
 #[cfg(feature = "std")]
 #[allow(clippy::derive_hash_xor_eq)]
-impl<C, H> core::hash::Hash for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl core::hash::Hash for Cid {
     fn hash<T: core::hash::Hasher>(&self, state: &mut T) {
         self.to_bytes().hash(state);
     }
 }
 
 #[cfg(feature = "std")]
-impl<C, H> core::fmt::Display for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl core::fmt::Display for Cid {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         let output = match self.version {
             Version::V0 => self.to_string_v0(),
@@ -191,11 +179,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<C, H> core::str::FromStr for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl core::str::FromStr for Cid {
     type Err = Error;
 
     fn from_str(cid_str: &str) -> Result<Self> {
@@ -204,11 +188,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<C, H> TryFrom<String> for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl TryFrom<String> for Cid {
     type Error = Error;
 
     fn try_from(cid_str: String) -> Result<Self> {
@@ -217,11 +197,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<C, H> TryFrom<&str> for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl TryFrom<&str> for Cid {
     type Error = Error;
 
     fn try_from(cid_str: &str) -> Result<Self> {
@@ -248,11 +224,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<C, H> TryFrom<Vec<u8>> for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl TryFrom<Vec<u8>> for Cid {
     type Error = Error;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self> {
@@ -261,11 +233,7 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<C, H> TryFrom<&[u8]> for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
+impl TryFrom<&[u8]> for Cid {
     type Error = Error;
 
     fn try_from(mut bytes: &[u8]) -> Result<Self> {
@@ -273,34 +241,22 @@ where
     }
 }
 
-impl<C, H> From<&Cid<C, H>> for Cid<C, H>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
-    fn from(cid: &Cid<C, H>) -> Self {
+impl From<&Cid> for Cid {
+    fn from(cid: &Cid) -> Self {
         cid.clone()
     }
 }
 
 #[cfg(feature = "std")]
-impl<C, H> From<Cid<C, H>> for Vec<u8>
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
-    fn from(cid: Cid<C, H>) -> Self {
+impl From<Cid> for Vec<u8> {
+    fn from(cid: Cid) -> Self {
         cid.to_bytes()
     }
 }
 
 #[cfg(feature = "std")]
-impl<C, H> From<Cid<C, H>> for String
-where
-    C: Into<u64> + TryFrom<u64> + Copy,
-    H: MultihashCode,
-{
-    fn from(cid: Cid<C, H>) -> Self {
+impl From<Cid> for String {
+    fn from(cid: Cid) -> Self {
         cid.to_string()
     }
 }
