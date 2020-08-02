@@ -1,6 +1,6 @@
 [package]
-name = "tiny-cid"
-version = "0.1.0"
+name = "cid"
+version = "0.5.1"
 description = "CID in rust"
 homepage = "https://github.com/multiformats/rust-cid"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
