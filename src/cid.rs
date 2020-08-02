@@ -35,7 +35,7 @@ impl Cid {
     pub fn new_v1(codec: u64, hash: RawMultihash) -> Self {
         Self {
             version: Version::V1,
-            codec: codec.into(),
+            codec,
             hash,
         }
     }
@@ -74,7 +74,7 @@ impl Cid {
         use unsigned_varint::io::read_u64;
         let version = read_u64(&mut r)?;
         let codec = read_u64(&mut r)?;
-        if &[version, codec] == &[0x12, 0x20] {
+        if [version, codec] == [0x12, 0x20] {
             let mut digest = [0u8; 32];
             r.read_exact(&mut digest)?;
             let mh = RawMultihash::wrap(version, &digest).unwrap();
@@ -94,7 +94,7 @@ impl Cid {
         let version = varint_encode::u64(self.version.into(), &mut version_buf);
 
         let mut codec_buf = varint_encode::u64_buffer();
-        let codec = varint_encode::u64(self.codec.into(), &mut codec_buf);
+        let codec = varint_encode::u64(self.codec, &mut codec_buf);
 
         w.write_all(version)?;
         w.write_all(codec)?;
