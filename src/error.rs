@@ -60,6 +60,12 @@ impl From<multihash::Error> for Error {
     }
 }
 
+impl From<unsigned_varint::decode::Error> for Error {
+    fn from(_: unsigned_varint::decode::Error) -> Self {
+        Self::VarIntDecodeError
+    }
+}
+
 #[cfg(feature = "std")]
 impl From<unsigned_varint::io::ReadError> for Error {
     fn from(err: unsigned_varint::io::ReadError) -> Self {
