@@ -35,4 +35,4 @@ quickcheck = "0.9.2"
 rand = "0.7.3"
 
 [patch.crates-io]
-multihash = { path = "../tiny-multihash" }
+multihash = { git = "https://github.com/ipfs-rust/tiny-multihash" }
