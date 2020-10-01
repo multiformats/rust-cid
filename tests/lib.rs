@@ -2,28 +2,32 @@ use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
-use cid::{Cid, Codec, Error, Version};
+use cid::{Cid, Error, Size, Version};
 use multibase::Base;
-use multihash::Sha2_256;
+use multihash::typenum::U128;
+use multihash::{derive::Multihash, Code, MultihashDigest};
+
+const RAW: u64 = 0x55;
+const DAG_PB: u64 = 0x70;
 
 #[test]
 fn basic_marshalling() {
-    let h = Sha2_256::digest(b"beep boop");
+    let h = Code::Sha2_256.digest(b"beep boop");
 
-    let cid = Cid::new_v1(Codec::DagProtobuf, h);
+    let cid = Cid::new_v1(DAG_PB, h);
 
     let data = cid.to_bytes();
     let out = Cid::try_from(data.clone()).unwrap();
     assert_eq!(cid, out);
 
-    let out2: Cid = data.try_into().unwrap();
+    let out2 = data.try_into().unwrap();
     assert_eq!(cid, out2);
 
     let s = cid.to_string();
     let out3 = Cid::try_from(&s[..]).unwrap();
     assert_eq!(cid, out3);
 
-    let out4: Cid = (&s[..]).try_into().unwrap();
+    let out4 = (&s[..]).try_into().unwrap();
     assert_eq!(cid, out4);
 }
 
@@ -78,7 +82,7 @@ fn from() {
 #[test]
 fn test_hash() {
     let data: Vec<u8> = vec![1, 2, 3];
-    let hash = Sha2_256::digest(&data);
+    let hash = Code::Sha2_256.digest(&data);
     let mut map = HashMap::new();
     let cid = Cid::new_v0(hash).unwrap();
     map.insert(cid.clone(), data.clone());
@@ -89,21 +93,21 @@ fn test_hash() {
 fn test_base32() {
     let cid = Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
     assert_eq!(cid.version(), Version::V1);
-    assert_eq!(cid.codec(), Codec::Raw);
-    assert_eq!(cid.hash(), Sha2_256::digest(b"foo"));
+    assert_eq!(cid.codec(), RAW);
+    assert_eq!(cid.hash(), &Code::Sha2_256.digest(b"foo"));
 }
 
 #[test]
 fn to_string() {
     let expected_cid = "bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy";
-    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    let cid = Cid::new_v1(RAW, Code::Sha2_256.digest(b"foo"));
     assert_eq!(cid.to_string(), expected_cid);
 }
 
 #[test]
 fn to_string_of_base32() {
     let expected_cid = "bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy";
-    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    let cid = Cid::new_v1(RAW, Code::Sha2_256.digest(b"foo"));
     assert_eq!(
         cid.to_string_of_base(Base::Base32Lower).unwrap(),
         expected_cid
@@ -113,14 +117,14 @@ fn to_string_of_base32() {
 #[test]
 fn to_string_of_base64() {
     let expected_cid = "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu";
-    let cid = Cid::new_v1(Codec::Raw, Sha2_256::digest(b"foo"));
+    let cid = Cid::new_v1(RAW, Code::Sha2_256.digest(b"foo"));
     assert_eq!(cid.to_string_of_base(Base::Base64).unwrap(), expected_cid);
 }
 
 #[test]
 fn to_string_of_base58_v0() {
     let expected_cid = "QmRJzsvyCQyizr73Gmms8ZRtvNxmgqumxc2KUp71dfEmoj";
-    let cid = Cid::new_v0(Sha2_256::digest(b"foo")).unwrap();
+    let cid = Cid::new_v0(Code::Sha2_256.digest(b"foo")).unwrap();
     assert_eq!(
         cid.to_string_of_base(Base::Base58Btc).unwrap(),
         expected_cid
@@ -129,9 +133,33 @@ fn to_string_of_base58_v0() {
 
 #[test]
 fn to_string_of_base_v0_error() {
-    let cid = Cid::new_v0(Sha2_256::digest(b"foo")).unwrap();
+    let cid = Cid::new_v0(Code::Sha2_256.digest(b"foo")).unwrap();
     assert_eq!(
         cid.to_string_of_base(Base::Base16Upper),
         Err(Error::InvalidCidV0Base)
+    );
+}
+
+fn a_function_that_takes_a_generic_cid<S: Size>(cid: &cid::cid::Cid<S>) -> String {
+    cid.to_string()
+}
+
+// This test is about having something implemented that used the default size of `Cid`. So the code
+// is using `Cid` instead of `Cid<SomeSize>`. The code will still work with other sizes.
+#[test]
+fn method_can_take_differently_sized_cids() {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, Multihash)]
+    #[mh(alloc_size = U128)]
+    enum Code128 {
+        #[mh(code = 0x12, hasher = multihash::Sha2_256, digest = multihash::Sha2Digest<multihash::U32>)]
+        Sha2_256,
+    }
+
+    let cid_default = Cid::new_v1(RAW, Code::Sha2_256.digest(b"foo"));
+    let cid_128 = cid::cid::Cid::<U128>::new_v1(RAW, Code128::Sha2_256.digest(b"foo"));
+
+    assert_eq!(
+        a_function_that_takes_a_generic_cid(&cid_default),
+        a_function_that_takes_a_generic_cid(&cid_128)
     );
 }

@@ -14,7 +14,12 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [dependencies]
-multihash = "0.11.2"
+#multihash = "0.11.2"
+#tiny_multihash = { path = "/home/vmx/src/pl/rust/tiny-multihash" }
+#tiny_multihash = { }
+#multihash = { package = "tiny-multihash", path = "/home/vmx/src/pl/rust/tiny-multihash" }
+#multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash" }
+multihash = { path = "/home/vmx/src/pl/rust/rust-multihash" }
 multibase = "0.8.0"
 unsigned-varint = "0.5.0"
 
@@ -24,7 +29,14 @@ rand = { version = "0.7.3", optional = true }
 [dev-dependencies]
 quickcheck = "0.9.2"
 rand = "0.7.3"
-multihash = { version = "0.11", features = ["test"] }
+#multihash = { version = "0.11", features = ["test"] }
+#multihash = { package = "tiny-multihash", features = ["test"], path = "/home/vmx/src/pl/rust/tiny-multihash" }
+#multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash", features = ["test"] }
+multihash = { path = "/home/vmx/src/pl/rust/rust-multihash", features = ["arb"] }
 
 [features]
 test = ["quickcheck", "rand"]
+
+#[patch.crates-io]
+##multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash" }
+#tiny_multihash = { package = "multihash", path = "/home/vmx/src/pl/rust/tiny-multihash" }

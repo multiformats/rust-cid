@@ -50,20 +50,8 @@ impl From<multibase::Error> for Error {
     }
 }
 
-impl From<multihash::EncodeError> for Error {
-    fn from(_: multihash::EncodeError) -> Error {
-        Error::ParsingError
-    }
-}
-
-impl From<multihash::DecodeError> for Error {
-    fn from(_: multihash::DecodeError) -> Error {
-        Error::ParsingError
-    }
-}
-
-impl From<multihash::DecodeOwnedError> for Error {
-    fn from(_: multihash::DecodeOwnedError) -> Error {
+impl From<multihash::Error> for Error {
+    fn from(_: multihash::Error) -> Error {
         Error::ParsingError
     }
 }
