@@ -3,17 +3,19 @@
 //! Implementation of [cid](https://github.com/ipld/cid) in Rust.
 
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod cid;
 mod error;
 mod version;
 
-#[cfg(any(test, feature = "test"))]
+#[cfg(any(test, feature = "arb"))]
 mod arb;
 
 pub use self::error::{Error, Result};
 pub use self::version::Version;
 
+#[cfg(feature = "std")]
 pub use multibase;
 pub use multihash;
 pub use multihash::{Size, U64};

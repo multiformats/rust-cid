@@ -85,7 +85,7 @@ fn test_hash() {
     let hash = Code::Sha2_256.digest(&data);
     let mut map = HashMap::new();
     let cid = Cid::new_v0(hash).unwrap();
-    map.insert(cid.clone(), data.clone());
+    map.insert(cid, data.clone());
     assert_eq!(&data, map.get(&cid).unwrap());
 }
 
