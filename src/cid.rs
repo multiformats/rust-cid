@@ -5,10 +5,13 @@
 //!
 //! As a library author that works with CIDs that should support hashes of anysize, you would
 //! import the `Cid` type from this module.
+#[cfg(feature = "std")]
 use std::convert::TryFrom;
 
+#[cfg(feature = "std")]
 use multibase::{encode as base_encode, Base};
-use multihash::{Code, Multihash, Size};
+use multihash::{Multihash, Size};
+#[cfg(feature = "std")]
 use unsigned_varint::{decode as varint_decode, encode as varint_encode};
 
 use crate::error::{Error, Result};
@@ -16,6 +19,8 @@ use crate::version::Version;
 
 /// DAG-PB multicodec code
 const DAG_PB: u64 = 0x70;
+/// The SHA_256 multicodec code
+const SHA2_256: u64 = 0x12;
 
 /// Representation of a CID.
 ///
@@ -30,10 +35,12 @@ pub struct Cid<S: Size> {
     hash: Multihash<S>,
 }
 
+impl<S: Size> Copy for Cid<S> where S::ArrayType: Copy {}
+
 impl<S: Size> Cid<S> {
     /// Create a new CIDv0.
     pub fn new_v0(hash: Multihash<S>) -> Result<Self> {
-        if hash.code() != Code::Sha2_256.into() {
+        if hash.code() != SHA2_256 {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
@@ -80,18 +87,22 @@ impl<S: Size> Cid<S> {
         &self.hash
     }
 
+    #[cfg(feature = "std")]
     fn to_string_v0(&self) -> String {
         Base::Base58Btc.encode(self.hash.to_bytes())
     }
 
+    #[cfg(feature = "std")]
     fn to_string_v1(&self) -> String {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
 
+    #[cfg(feature = "std")]
     fn to_bytes_v0(&self) -> Vec<u8> {
         self.hash.to_bytes()
     }
 
+    #[cfg(feature = "std")]
     fn to_bytes_v1(&self) -> Vec<u8> {
         let mut res = Vec::with_capacity(16);
 
@@ -107,6 +118,7 @@ impl<S: Size> Cid<S> {
     }
 
     /// Convert CID to encoded bytes.
+    #[cfg(feature = "std")]
     pub fn to_bytes(&self) -> Vec<u8> {
         match self.version {
             Version::V0 => self.to_bytes_v0(),
@@ -129,6 +141,7 @@ impl<S: Size> Cid<S> {
     /// let encoded = cid.to_string_of_base(Base::Base64).unwrap();
     /// assert_eq!(encoded, "mAVUSICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueu");
     /// ```
+    #[cfg(feature = "std")]
     pub fn to_string_of_base(&self, base: Base) -> Result<String> {
         match self.version {
             Version::V0 => {
@@ -143,6 +156,7 @@ impl<S: Size> Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 #[allow(clippy::derive_hash_xor_eq)]
 impl<S: Size> std::hash::Hash for Cid<S> {
     fn hash<T: std::hash::Hasher>(&self, state: &mut T) {
@@ -150,6 +164,7 @@ impl<S: Size> std::hash::Hash for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> std::fmt::Display for Cid<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let output = match self.version {
@@ -160,6 +175,7 @@ impl<S: Size> std::fmt::Display for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> std::str::FromStr for Cid<S> {
     type Err = Error;
 
@@ -168,6 +184,7 @@ impl<S: Size> std::str::FromStr for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> TryFrom<String> for Cid<S> {
     type Error = Error;
 
@@ -176,6 +193,7 @@ impl<S: Size> TryFrom<String> for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> TryFrom<&str> for Cid<S> {
     type Error = Error;
 
@@ -202,6 +220,7 @@ impl<S: Size> TryFrom<&str> for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> TryFrom<Vec<u8>> for Cid<S> {
     type Error = Error;
 
@@ -210,6 +229,7 @@ impl<S: Size> TryFrom<Vec<u8>> for Cid<S> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> TryFrom<&[u8]> for Cid<S> {
     type Error = Error;
 
@@ -230,18 +250,23 @@ impl<S: Size> TryFrom<&[u8]> for Cid<S> {
     }
 }
 
-impl<S: Size> From<&Cid<S>> for Cid<S> {
+impl<S: Size> From<&Cid<S>> for Cid<S>
+where
+    S::ArrayType: Copy,
+{
     fn from(cid: &Cid<S>) -> Self {
-        cid.to_owned()
+        *cid
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> From<Cid<S>> for Vec<u8> {
     fn from(cid: Cid<S>) -> Self {
         cid.to_bytes()
     }
 }
 
+#[cfg(feature = "std")]
 impl<S: Size> From<Cid<S>> for String {
     fn from(cid: Cid<S>) -> Self {
         cid.to_string()

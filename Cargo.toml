@@ -13,15 +13,20 @@ edition = "2018"
 pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
+[features]
+default = ["std"]
+std = ["multibase", "multihash/std", "unsigned-varint/std"]
+arb = ["quickcheck", "rand", "multihash/arb"]
+
 [dependencies]
 #multihash = "0.11.2"
 #tiny_multihash = { path = "/home/vmx/src/pl/rust/tiny-multihash" }
 #tiny_multihash = { }
 #multihash = { package = "tiny-multihash", path = "/home/vmx/src/pl/rust/tiny-multihash" }
 #multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash" }
-multihash = { path = "/home/vmx/src/pl/rust/rust-multihash" }
-multibase = "0.8.0"
-unsigned-varint = "0.5.0"
+multihash = { path = "/home/vmx/src/pl/rust/rust-multihash", default-features = false, features = ["multihash-impl"] }
+multibase = { version = "0.8.0", optional = true }
+unsigned-varint = { version = "0.5.1", default-features = false }
 
 quickcheck = { version = "0.9.2", optional = true }
 rand = { version = "0.7.3", optional = true }
@@ -32,11 +37,5 @@ rand = "0.7.3"
 #multihash = { version = "0.11", features = ["test"] }
 #multihash = { package = "tiny-multihash", features = ["test"], path = "/home/vmx/src/pl/rust/tiny-multihash" }
 #multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash", features = ["test"] }
-multihash = { path = "/home/vmx/src/pl/rust/rust-multihash", features = ["arb"] }
+multihash = { path = "/home/vmx/src/pl/rust/rust-multihash", default-features = false, features = ["arb"] }
 
-[features]
-test = ["quickcheck", "rand"]
-
-#[patch.crates-io]
-##multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "merge-tiny-multihash" }
-#tiny_multihash = { package = "multihash", path = "/home/vmx/src/pl/rust/tiny-multihash" }
