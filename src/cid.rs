@@ -156,6 +156,16 @@ impl<S: Size> Cid<S> {
     }
 }
 
+impl<S: Size> Default for Cid<S> {
+    fn default() -> Self {
+        Self {
+            version: Version::V1,
+            codec: 0,
+            hash: Multihash::<S>::default(),
+        }
+    }
+}
+
 #[cfg(feature = "std")]
 #[allow(clippy::derive_hash_xor_eq)]
 impl<S: Size> std::hash::Hash for Cid<S> {
