@@ -4,7 +4,7 @@ use core::fmt;
 pub type Result<T> = core::result::Result<T, Error>;
 
 /// Error types
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Debug)]
 pub enum Error {
     /// Unknown CID codec.
     UnknownCodec,
@@ -22,6 +22,9 @@ pub enum Error {
     InvalidCidV0Base,
     /// Varint decode failure.
     VarIntDecodeError,
+    /// Io error.
+    #[cfg(feature = "std")]
+    Io(std::io::Error),
 }
 
 #[cfg(feature = "std")]
@@ -30,7 +33,7 @@ impl std::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Error::*;
-        let error = match *self {
+        let error = match self {
             UnknownCodec => "Unknown codec",
             InputTooShort => "Input too short",
             ParsingError => "Failed to parse multihash",
@@ -39,6 +42,8 @@ impl fmt::Display for Error {
             InvalidCidV0Multihash => "CIDv0 requires a Sha-256 multihash",
             InvalidCidV0Base => "CIDv0 requires a Base58 base",
             VarIntDecodeError => "Failed to decode unsigned varint format",
+            #[cfg(feature = "std")]
+            Io(err) => return write!(f, "{}", err),
         };
 
         f.write_str(error)
@@ -61,5 +66,23 @@ impl From<multihash::Error> for Error {
 impl From<unsigned_varint::decode::Error> for Error {
     fn from(_: unsigned_varint::decode::Error) -> Self {
         Error::VarIntDecodeError
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<unsigned_varint::io::ReadError> for Error {
+    fn from(err: unsigned_varint::io::ReadError) -> Self {
+        use unsigned_varint::io::ReadError::*;
+        match err {
+            Io(err) => Self::Io(err),
+            _ => Self::VarIntDecodeError,
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(err)
     }
 }
