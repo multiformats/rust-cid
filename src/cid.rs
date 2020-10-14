@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 use multibase::{encode as base_encode, Base};
 use multihash::{Multihash, Size};
 #[cfg(feature = "std")]
-use unsigned_varint::{decode as varint_decode, encode as varint_encode};
+use unsigned_varint::{encode as varint_encode, io::read_u64 as varint_read_u64};
 
 use crate::error::{Error, Result};
 use crate::version::Version;
@@ -87,6 +87,56 @@ impl<S: Size> Cid<S> {
         &self.hash
     }
 
+    /// Reads the bytes from a byte stream.
+    #[cfg(feature = "std")]
+    pub fn read_bytes<R: std::io::Read>(mut r: R) -> Result<Self> {
+        let version = varint_read_u64(&mut r)?;
+        let codec = varint_read_u64(&mut r)?;
+        // CIDv0 has the fixed `0x12 0x20` prefix
+        if [version, codec] == [0x12, 0x20] {
+            let mut digest = [0u8; 32];
+            r.read_exact(&mut digest)?;
+            let mh = Multihash::wrap(version, &digest).expect("Digest is always 32 bytes.");
+            Self::new_v0(mh)
+        } else {
+            let version = Version::try_from(version)?;
+            let mh = Multihash::read(r)?;
+            Self::new(version, codec, mh)
+        }
+    }
+
+    #[cfg(feature = "std")]
+    fn write_bytes_v1<W: std::io::Write>(&self, mut w: W) -> Result<()> {
+        let mut version_buf = varint_encode::u64_buffer();
+        let version = varint_encode::u64(self.version.into(), &mut version_buf);
+
+        let mut codec_buf = varint_encode::u64_buffer();
+        let codec = varint_encode::u64(self.codec, &mut codec_buf);
+
+        w.write_all(version)?;
+        w.write_all(codec)?;
+        self.hash.write(&mut w)?;
+        Ok(())
+    }
+
+    /// Writes the bytes to a byte stream.
+    #[cfg(feature = "std")]
+    pub fn write_bytes<W: std::io::Write>(&self, w: W) -> Result<()> {
+        match self.version {
+            Version::V0 => self.hash.write(w)?,
+            Version::V1 => self.write_bytes_v1(w)?,
+        }
+        Ok(())
+    }
+
+    /// Returns the encoded bytes of the `Cid`.
+    #[cfg(feature = "std")]
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+        self.write_bytes(&mut bytes).unwrap();
+        bytes
+    }
+
     #[cfg(feature = "std")]
     fn to_string_v0(&self) -> String {
         Base::Base58Btc.encode(self.hash.to_bytes())
@@ -95,35 +145,6 @@ impl<S: Size> Cid<S> {
     #[cfg(feature = "std")]
     fn to_string_v1(&self) -> String {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
-    }
-
-    #[cfg(feature = "std")]
-    fn to_bytes_v0(&self) -> Vec<u8> {
-        self.hash.to_bytes()
-    }
-
-    #[cfg(feature = "std")]
-    fn to_bytes_v1(&self) -> Vec<u8> {
-        let mut res = Vec::with_capacity(16);
-
-        let mut buf = varint_encode::u64_buffer();
-        let version = varint_encode::u64(self.version.into(), &mut buf);
-        res.extend_from_slice(version);
-        let mut buf = varint_encode::u64_buffer();
-        let codec = varint_encode::u64(self.codec, &mut buf);
-        res.extend_from_slice(codec);
-        res.extend_from_slice(&self.hash.to_bytes());
-
-        res
-    }
-
-    /// Convert CID to encoded bytes.
-    #[cfg(feature = "std")]
-    pub fn to_bytes(&self) -> Vec<u8> {
-        match self.version {
-            Version::V0 => self.to_bytes_v0(),
-            Version::V1 => self.to_bytes_v1(),
-        }
     }
 
     /// Convert CID into a multibase encoded string
@@ -233,20 +254,8 @@ impl<S: Size> TryFrom<Vec<u8>> for Cid<S> {
 impl<S: Size> TryFrom<&[u8]> for Cid<S> {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Self> {
-        if Version::is_v0_binary(bytes) {
-            let mh = Multihash::from_bytes(bytes)?;
-            Self::new_v0(mh)
-        } else {
-            let (raw_version, remain) = varint_decode::u64(&bytes)?;
-            let version = Version::try_from(raw_version)?;
-
-            let (codec, hash) = varint_decode::u64(&remain)?;
-
-            let mh = Multihash::from_bytes(hash)?;
-
-            Self::new(version, codec, mh)
-        }
+    fn try_from(mut bytes: &[u8]) -> Result<Self> {
+        Self::read_bytes(&mut bytes)
     }
 }
 
