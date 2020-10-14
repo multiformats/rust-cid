@@ -33,7 +33,7 @@ fn basic_marshalling() {
 
 #[test]
 fn empty_string() {
-    assert_eq!(Cid::try_from(""), Err(Error::InputTooShort));
+    assert!(matches!(Cid::try_from(""), Err(Error::InputTooShort)))
 }
 
 #[test]
@@ -53,13 +53,13 @@ fn from_str() {
     assert_eq!(cid.version(), Version::V0);
 
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII".parse::<Cid>();
-    assert_eq!(bad, Err(Error::ParsingError));
+    assert!(matches!(bad, Err(Error::ParsingError)));
 }
 
 #[test]
 fn v0_error() {
     let bad = "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zIII";
-    assert_eq!(Cid::try_from(bad), Err(Error::ParsingError));
+    assert!(matches!(Cid::try_from(bad), Err(Error::ParsingError)));
 }
 
 #[test]
@@ -134,10 +134,10 @@ fn to_string_of_base58_v0() {
 #[test]
 fn to_string_of_base_v0_error() {
     let cid = Cid::new_v0(Code::Sha2_256.digest(b"foo")).unwrap();
-    assert_eq!(
+    assert!(matches!(
         cid.to_string_of_base(Base::Base16Upper),
         Err(Error::InvalidCidV0Base)
-    );
+    ));
 }
 
 fn a_function_that_takes_a_generic_cid<S: Size>(cid: &cid::cid::Cid<S>) -> String {
