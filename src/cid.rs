@@ -291,3 +291,17 @@ impl<S: Size> From<Cid<S>> for String {
         cid.to_string()
     }
 }
+
+#[cfg(feature = "std")]
+impl<'a, S: Size> From<Cid<S>> for std::borrow::Cow<'a, Cid<S>> {
+    fn from(from: Cid<S>) -> Self {
+        std::borrow::Cow::Owned(from)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a, S: Size> From<&'a Cid<S>> for std::borrow::Cow<'a, Cid<S>> {
+    fn from(from: &'a Cid<S>) -> Self {
+        std::borrow::Cow::Borrowed(from)
+    }
+}
