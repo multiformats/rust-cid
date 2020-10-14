@@ -4,6 +4,10 @@ use crate::error::{Error, Result};
 
 /// The version of the CID.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+#[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
+#[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
+#[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde-codec", derive(serde::Serialize))]
 pub enum Version {
     /// CID version 0.
     V0,

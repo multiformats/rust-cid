@@ -26,6 +26,11 @@ const SHA2_256: u64 = 0x12;
 ///
 /// The generic is about the allocated size of the multihash.
 #[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
+#[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
+#[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
+#[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde-codec", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde-codec", serde(bound = "S: Size"))]
 pub struct Cid<S: Size> {
     /// The version of CID.
     version: Version,
@@ -303,5 +308,33 @@ impl<'a, S: Size> From<Cid<S>> for std::borrow::Cow<'a, Cid<S>> {
 impl<'a, S: Size> From<&'a Cid<S>> for std::borrow::Cow<'a, Cid<S>> {
     fn from(from: &'a Cid<S>) -> Self {
         std::borrow::Cow::Borrowed(from)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[cfg(feature = "scale-codec")]
+    fn test_cid_scale_codec() {
+        use super::Cid;
+        use multihash::U64;
+        use parity_scale_codec::{Decode, Encode};
+
+        let cid = Cid::<U64>::default();
+        let bytes = cid.encode();
+        let cid2 = Cid::decode(&mut &bytes[..]).unwrap();
+        assert_eq!(cid, cid2);
+    }
+
+    #[test]
+    #[cfg(feature = "serde-codec")]
+    fn test_cid_serde() {
+        use super::Cid;
+        use multihash::U64;
+
+        let cid = Cid::<U64>::default();
+        let bytes = serde_json::to_string(&cid).unwrap();
+        let cid2 = serde_json::from_str(&bytes).unwrap();
+        assert_eq!(cid, cid2);
     }
 }
