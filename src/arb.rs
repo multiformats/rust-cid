@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use multihash::{Code, Multihash, MultihashDigest, U64};
+use multihash::{Code, Multihash, MultihashDigest};
 use quickcheck::{Arbitrary, Gen};
 use rand::{
     distributions::{weighted::WeightedIndex, Distribution},
@@ -40,7 +40,7 @@ impl Arbitrary for Cid {
                 _ => unreachable!(),
             };
 
-            let hash: Multihash<U64> = Arbitrary::arbitrary(g);
+            let hash: Multihash = Arbitrary::arbitrary(g);
             Cid::new_v1(codec, hash)
         }
     }

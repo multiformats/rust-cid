@@ -10,7 +10,7 @@ use std::convert::TryFrom;
 
 #[cfg(feature = "std")]
 use multibase::{encode as base_encode, Base};
-use multihash::{Multihash, Size};
+use multihash::{MultihashGeneric as Multihash, Size};
 #[cfg(feature = "std")]
 use unsigned_varint::{encode as varint_encode, io::read_u64 as varint_read_u64};
 
