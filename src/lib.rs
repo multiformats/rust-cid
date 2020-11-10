@@ -5,24 +5,24 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub mod cid;
+mod cid;
 mod error;
 mod version;
 
 #[cfg(any(test, feature = "arb"))]
 mod arb;
 
+pub use self::cid::Cid as CidGeneric;
 pub use self::error::{Error, Result};
 pub use self::version::Version;
 
 #[cfg(feature = "std")]
 pub use multibase;
 pub use multihash;
-pub use multihash::{Size, U64};
 
 /// A Cid that contains a multihash with an allocated size of 512 bits.
 ///
 /// This is the same digest size the default multihash code table has.
 ///
-/// If you need a CID that is generic over its digest size, use [`cid::Cid`] instead.
-pub type Cid = self::cid::Cid<U64>;
+/// If you need a CID that is generic over its digest size, use [`CidGeneric`] instead.
+pub type Cid = CidGeneric<multihash::U64>;

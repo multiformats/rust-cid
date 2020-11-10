@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
-use cid::{Cid, Error, Size, Version};
+use cid::{Cid, CidGeneric, Error, Version};
 use multibase::Base;
 use multihash::typenum::U128;
-use multihash::{derive::Multihash, Code, MultihashDigest};
+use multihash::{derive::Multihash, Code, MultihashDigest, Size};
 
 const RAW: u64 = 0x55;
 const DAG_PB: u64 = 0x70;
@@ -140,7 +140,7 @@ fn to_string_of_base_v0_error() {
     ));
 }
 
-fn a_function_that_takes_a_generic_cid<S: Size>(cid: &cid::cid::Cid<S>) -> String {
+fn a_function_that_takes_a_generic_cid<S: Size>(cid: &CidGeneric<S>) -> String {
     cid.to_string()
 }
 
@@ -156,7 +156,7 @@ fn method_can_take_differently_sized_cids() {
     }
 
     let cid_default = Cid::new_v1(RAW, Code::Sha2_256.digest(b"foo"));
-    let cid_128 = cid::cid::Cid::<U128>::new_v1(RAW, Code128::Sha2_256.digest(b"foo"));
+    let cid_128 = CidGeneric::<U128>::new_v1(RAW, Code128::Sha2_256.digest(b"foo"));
 
     assert_eq!(
         a_function_that_takes_a_generic_cid(&cid_default),
