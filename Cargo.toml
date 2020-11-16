@@ -21,7 +21,7 @@ scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["serde", "multihash/serde-codec"]
 
 [dependencies]
-multihash = { version = "0.13", default-features = false }
+multihash = { version = "0.13.1", default-features = false }
 unsigned-varint = { version = "0.5.1", default-features = false }
 
 multibase = { version = "0.8.0", optional = true }
@@ -31,7 +31,7 @@ rand = { version = "0.7.3", optional = true }
 serde = { version = "1.0.116", optional = true }
 
 [dev-dependencies]
-multihash = { version = "0.13", default-features = false, features = ["arb"] }
+multihash = { version = "0.13.1", default-features = false, features = ["arb"] }
 quickcheck = "0.9.2"
 rand = "0.7.3"
 serde_json = "1.0.59"

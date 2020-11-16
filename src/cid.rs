@@ -25,7 +25,7 @@ const SHA2_256: u64 = 0x12;
 /// Representation of a CID.
 ///
 /// The generic is about the allocated size of the multihash.
-#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
 #[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
@@ -189,14 +189,6 @@ impl<S: Size> Default for Cid<S> {
             codec: 0,
             hash: Multihash::<S>::default(),
         }
-    }
-}
-
-#[cfg(feature = "std")]
-#[allow(clippy::derive_hash_xor_eq)]
-impl<S: Size> std::hash::Hash for Cid<S> {
-    fn hash<T: std::hash::Hasher>(&self, state: &mut T) {
-        self.to_bytes().hash(state);
     }
 }
 
