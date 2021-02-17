@@ -25,7 +25,7 @@ const SHA2_256: u64 = 0x12;
 /// Representation of a CID.
 ///
 /// The generic is about the allocated size of the multihash.
-#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
 #[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
@@ -200,6 +200,25 @@ impl<S: Size> std::fmt::Display for Cid<S> {
             Version::V1 => self.to_string_v1(),
         };
         write!(f, "{}", output)
+    }
+}
+
+#[cfg(feature = "std")]
+impl<S: Size> std::fmt::Debug for Cid<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            f.debug_struct("Cid")
+                .field("version", &self.version())
+                .field("codec", &self.codec())
+                .field("hash", self.hash())
+                .finish()
+        } else {
+            let output = match self.version {
+                Version::V0 => self.to_string_v0(),
+                Version::V1 => self.to_string_v1(),
+            };
+            write!(f, "Cid({})", output)
+        }
     }
 }
 
