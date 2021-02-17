@@ -348,4 +348,24 @@ mod tests {
         let cid2 = serde_json::from_str(&bytes).unwrap();
         assert_eq!(cid, cid2);
     }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn test_debug_instance() {
+        use super::Cid;
+        use multihash::U64;
+        use std::str::FromStr;
+        let cid =
+            Cid::<U64>::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4")
+                .unwrap();
+        // short debug
+        assert_eq!(
+            &format!("{:?}", cid),
+            "Cid(bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4)"
+        );
+        // verbose debug
+        let mut txt = format!("{:#?}", cid);
+        txt.retain(|c| !c.is_whitespace());
+        assert_eq!(&txt, "Cid{version:V1,codec:113,hash:Multihash{code:18,size:32,digest:[41,119,46,195,0,149,81,168,63,176,40,43,118,60,191,149,226,240,10,35,152,172,31,178,232,48,180,238,36,196,112,55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,],},}");
+    }
 }
