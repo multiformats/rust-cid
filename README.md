@@ -37,14 +37,16 @@ Then run `cargo build`.
 ## Usage
 
 ```rust
-use cid::{Cid, Codec, Version};
-use multihash::Sha2_256;
+use cid::Cid;
+use multihash::{Code, MultihashDigest};
 use std::convert::TryFrom;
 
-fn main() {
-    let h = Sha2_256::digest(b"beep boop");
+const RAW: u64 = 0x55;
 
-    let cid = Cid::new(Version::V1, Codec::DagProtobuf, h).unwrap();
+fn main() {
+    let h = Code::Sha2_256.digest(b"beep boop");
+
+    let cid = Cid::new_v1(RAW, h);
 
     let data = cid.to_bytes();
     let out = Cid::try_from(data).unwrap();
@@ -52,7 +54,11 @@ fn main() {
     assert_eq!(cid, out);
 
     let cid_string = cid.to_string();
-    /// bafybeieq5jui4j25lacwomsqgjeswwl3y5zcdrresptwgmfylxo2depppq
+    assert_eq!(
+        cid_string,
+        "bafkreieq5jui4j25lacwomsqgjeswwl3y5zcdrresptwgmfylxo2depppq"
+    );
+    println!("{}", cid_string);
 }
 ```
 ## Maintainers
