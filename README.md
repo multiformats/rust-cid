@@ -16,23 +16,11 @@
 
 ## Table of Contents
 
-- [Install](#install)
 - [Usage](#usage)
 - [Maintainers](#maintainers)
 - [Contribute](#contribute)
 - [License](#license)
 
-## Install
-
-First add this to your `Cargo.toml`
-
-```toml
-[dependencies]
-cid = "*"
-multihash = "0.10"
-```
-
-Then run `cargo build`.
 
 ## Usage
 
@@ -61,6 +49,17 @@ fn main() {
     println!("{}", cid_string);
 }
 ```
+
+Your `Cargo.toml` needs these dependencies:
+
+```toml
+[dependencies]
+cid = "0.7.0"
+multihash = "0.14.0"
+```
+
+You can also run this example from this checkout with `cargo run --example readme`.
+
 ## Maintainers
 
 Captain: [@dignifiedquire](https://github.com/dignifiedquire).
