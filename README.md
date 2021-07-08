@@ -17,10 +17,10 @@
 ## Table of Contents
 
 - [Usage](#usage)
+- [Testing](#testing)
 - [Maintainers](#maintainers)
 - [Contribute](#contribute)
 - [License](#license)
-
 
 ## Usage
 
@@ -59,6 +59,10 @@ cid = "0.7.0"
 
 You can also run this example from this checkout with `cargo run --example readme`.
 
+## Testing
+
+You can run the tests using this command: `cargo test --all-features`
+
 ## Maintainers
 
 Captain: [@dignifiedquire](https://github.com/dignifiedquire).
@@ -70,7 +74,6 @@ Contributions welcome. Please check out [the issues](https://github.com/multifor
 Check out our [contributing document](https://github.com/multiformats/multiformats/blob/master/contributing.md) for more information on how we work, and about contributing in general. Please be aware that all interactions related to multiformats are subject to the IPFS [Code of Conduct](https://github.com/ipfs/community/blob/master/code-of-conduct.md).
 
 Small note: If editing the README, please conform to the [standard-readme](https://github.com/RichardLitt/standard-readme) specification.
-
 
 ## License
 
