@@ -25,8 +25,8 @@
 ## Usage
 
 ```rust
+use cid::multihash::{Code, MultihashDigest};
 use cid::Cid;
-use multihash::{Code, MultihashDigest};
 use std::convert::TryFrom;
 
 const RAW: u64 = 0x55;
@@ -55,7 +55,6 @@ Your `Cargo.toml` needs these dependencies:
 ```toml
 [dependencies]
 cid = "0.7.0"
-multihash = "0.14.0"
 ```
 
 You can also run this example from this checkout with `cargo run --example readme`.
