@@ -17,6 +17,7 @@
 ## Table of Contents
 
 - [Usage](#usage)
+- [Testing](#testing)
 - [Maintainers](#maintainers)
 - [Contribute](#contribute)
 - [License](#license)
