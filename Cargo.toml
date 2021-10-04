@@ -21,7 +21,7 @@ scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["serde", "multihash/serde-codec"]
 
 [dependencies]
-multihash = { version = "0.14.0", default-features = false }
+multihash = { version = "0.15.0", default-features = false }
 unsigned-varint = { version = "0.7.0", default-features = false }
 
 multibase = { version = "0.9.1", optional = true }
