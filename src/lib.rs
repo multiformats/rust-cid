@@ -16,7 +16,7 @@ pub use self::cid::Cid as CidGeneric;
 pub use self::error::{Error, Result};
 pub use self::version::Version;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub use multibase;
 pub use multihash;
 
