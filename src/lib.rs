@@ -25,4 +25,4 @@ pub use multihash;
 /// This is the same digest size the default multihash code table has.
 ///
 /// If you need a CID that is generic over its digest size, use [`CidGeneric`] instead.
-pub type Cid = CidGeneric<multihash::U64>;
+pub type Cid = CidGeneric<64>;

@@ -10,7 +10,7 @@ use core::convert::TryFrom;
 #[cfg(feature = "alloc")]
 use multibase::{encode as base_encode, Base};
 
-use multihash::{MultihashGeneric as Multihash, Size};
+use multihash::MultihashGeneric as Multihash;
 use unsigned_varint::encode as varint_encode;
 
 #[cfg(feature = "alloc")]
@@ -61,13 +61,12 @@ const SHA2_256: u64 = 0x12;
 /// Representation of a CID.
 ///
 /// The generic is about the allocated size of the multihash.
-#[derive(PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
+#[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
 #[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
 #[cfg_attr(feature = "serde-codec", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde-codec", serde(bound = "S: Size"))]
-pub struct Cid<S: Size> {
+pub struct Cid<const S: usize> {
     /// The version of CID.
     version: Version,
     /// The codec of CID.
@@ -76,9 +75,7 @@ pub struct Cid<S: Size> {
     hash: Multihash<S>,
 }
 
-impl<S: Size> Copy for Cid<S> where S::ArrayType: Copy {}
-
-impl<S: Size> Cid<S> {
+impl<const S: usize> Cid<S> {
     /// Create a new CIDv0.
     pub fn new_v0(hash: Multihash<S>) -> Result<Self> {
         if hash.code() != SHA2_256 {
@@ -176,11 +173,13 @@ impl<S: Size> Cid<S> {
     }
 
     #[cfg(feature = "alloc")]
+    #[allow(clippy::wrong_self_convention)]
     fn to_string_v0(&self) -> String {
         Base::Base58Btc.encode(self.hash.to_bytes())
     }
 
     #[cfg(feature = "alloc")]
+    #[allow(clippy::wrong_self_convention)]
     fn to_string_v1(&self) -> String {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
@@ -215,7 +214,7 @@ impl<S: Size> Cid<S> {
     }
 }
 
-impl<S: Size> Default for Cid<S> {
+impl<const S: usize> Default for Cid<S> {
     fn default() -> Self {
         Self {
             version: Version::V1,
@@ -226,7 +225,7 @@ impl<S: Size> Default for Cid<S> {
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> core::fmt::Display for Cid<S> {
+impl<const S: usize> core::fmt::Display for Cid<S> {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         let output = match self.version {
             Version::V0 => self.to_string_v0(),
@@ -237,7 +236,7 @@ impl<S: Size> core::fmt::Display for Cid<S> {
 }
 
 #[cfg(feature = "std")]
-impl<S: Size> std::fmt::Debug for Cid<S> {
+impl<const S: usize> std::fmt::Debug for Cid<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             f.debug_struct("Cid")
@@ -256,7 +255,7 @@ impl<S: Size> std::fmt::Debug for Cid<S> {
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> core::str::FromStr for Cid<S> {
+impl<const S: usize> core::str::FromStr for Cid<S> {
     type Err = Error;
 
     fn from_str(cid_str: &str) -> Result<Self> {
@@ -265,7 +264,7 @@ impl<S: Size> core::str::FromStr for Cid<S> {
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> TryFrom<String> for Cid<S> {
+impl<const S: usize> TryFrom<String> for Cid<S> {
     type Error = Error;
 
     fn try_from(cid_str: String) -> Result<Self> {
@@ -274,7 +273,7 @@ impl<S: Size> TryFrom<String> for Cid<S> {
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> TryFrom<&str> for Cid<S> {
+impl<const S: usize> TryFrom<&str> for Cid<S> {
     type Error = Error;
 
     fn try_from(cid_str: &str) -> Result<Self> {
@@ -301,7 +300,7 @@ impl<S: Size> TryFrom<&str> for Cid<S> {
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> TryFrom<Vec<u8>> for Cid<S> {
+impl<const S: usize> TryFrom<Vec<u8>> for Cid<S> {
     type Error = Error;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self> {
@@ -309,7 +308,7 @@ impl<S: Size> TryFrom<Vec<u8>> for Cid<S> {
     }
 }
 
-impl<S: Size> TryFrom<&[u8]> for Cid<S> {
+impl<const S: usize> TryFrom<&[u8]> for Cid<S> {
     type Error = Error;
 
     fn try_from(mut bytes: &[u8]) -> Result<Self> {
@@ -317,38 +316,35 @@ impl<S: Size> TryFrom<&[u8]> for Cid<S> {
     }
 }
 
-impl<S: Size> From<&Cid<S>> for Cid<S>
-where
-    S::ArrayType: Copy,
-{
+impl<const S: usize> From<&Cid<S>> for Cid<S> {
     fn from(cid: &Cid<S>) -> Self {
         *cid
     }
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> From<Cid<S>> for Vec<u8> {
+impl<const S: usize> From<Cid<S>> for Vec<u8> {
     fn from(cid: Cid<S>) -> Self {
         cid.to_bytes()
     }
 }
 
 #[cfg(feature = "alloc")]
-impl<S: Size> From<Cid<S>> for String {
+impl<const S: usize> From<Cid<S>> for String {
     fn from(cid: Cid<S>) -> Self {
         cid.to_string()
     }
 }
 
 #[cfg(feature = "alloc")]
-impl<'a, S: Size> From<Cid<S>> for borrow::Cow<'a, Cid<S>> {
+impl<'a, const S: usize> From<Cid<S>> for borrow::Cow<'a, Cid<S>> {
     fn from(from: Cid<S>) -> Self {
         borrow::Cow::Owned(from)
     }
 }
 
 #[cfg(feature = "std")]
-impl<'a, S: Size> From<&'a Cid<S>> for borrow::Cow<'a, Cid<S>> {
+impl<'a, const S: usize> From<&'a Cid<S>> for borrow::Cow<'a, Cid<S>> {
     fn from(from: &'a Cid<S>) -> Self {
         borrow::Cow::Borrowed(from)
     }
@@ -360,10 +356,9 @@ mod tests {
     #[cfg(feature = "scale-codec")]
     fn test_cid_scale_codec() {
         use super::Cid;
-        use multihash::U64;
         use parity_scale_codec::{Decode, Encode};
 
-        let cid = Cid::<U64>::default();
+        let cid = Cid::<64>::default();
         let bytes = cid.encode();
         let cid2 = Cid::decode(&mut &bytes[..]).unwrap();
         assert_eq!(cid, cid2);
@@ -373,9 +368,8 @@ mod tests {
     #[cfg(feature = "serde-codec")]
     fn test_cid_serde() {
         use super::Cid;
-        use multihash::U64;
 
-        let cid = Cid::<U64>::default();
+        let cid = Cid::<64>::default();
         let bytes = serde_json::to_string(&cid).unwrap();
         let cid2 = serde_json::from_str(&bytes).unwrap();
         assert_eq!(cid, cid2);
@@ -385,10 +379,9 @@ mod tests {
     #[cfg(feature = "std")]
     fn test_debug_instance() {
         use super::Cid;
-        use multihash::U64;
         use std::str::FromStr;
         let cid =
-            Cid::<U64>::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4")
+            Cid::<64>::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4")
                 .unwrap();
         // short debug
         assert_eq!(
