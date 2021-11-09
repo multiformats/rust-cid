@@ -37,4 +37,4 @@ core2 = { version = "0.3", default-features = false, features = ["alloc"] }
 serde_json = "1.0.59"
 
 [patch.crates-io]
-multihash = { git = "https://github.com/yatima-inc/rust-multihash", branch = "sb/core-io" }
+multihash = { git = "https://github.com/multiformats/rust-multihash", branch = "next" }
