@@ -173,11 +173,13 @@ impl<const S: usize> Cid<S> {
     }
 
     #[cfg(feature = "alloc")]
+    #[allow(clippy::wrong_self_convention)]
     fn to_string_v0(&self) -> String {
         Base::Base58Btc.encode(self.hash.to_bytes())
     }
 
     #[cfg(feature = "alloc")]
+    #[allow(clippy::wrong_self_convention)]
     fn to_string_v1(&self) -> String {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
