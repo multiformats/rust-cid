@@ -224,6 +224,8 @@ impl<const S: usize> Default for Cid<S> {
     }
 }
 
+// TODO: remove the dependency on alloc by fixing
+// https://github.com/multiformats/rust-multibase/issues/33
 #[cfg(feature = "alloc")]
 impl<const S: usize> core::fmt::Display for Cid<S> {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
@@ -235,9 +237,9 @@ impl<const S: usize> core::fmt::Display for Cid<S> {
     }
 }
 
-#[cfg(feature = "std")]
-impl<const S: usize> std::fmt::Debug for Cid<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+#[cfg(feature = "alloc")]
+impl<const S: usize> core::fmt::Debug for Cid<S> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if f.alternate() {
             f.debug_struct("Cid")
                 .field("version", &self.version())
@@ -343,7 +345,7 @@ impl<'a, const S: usize> From<Cid<S>> for borrow::Cow<'a, Cid<S>> {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl<'a, const S: usize> From<&'a Cid<S>> for borrow::Cow<'a, Cid<S>> {
     fn from(from: &'a Cid<S>) -> Self {
         borrow::Cow::Borrowed(from)
