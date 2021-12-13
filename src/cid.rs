@@ -77,7 +77,7 @@ pub struct Cid<const S: usize> {
 
 impl<const S: usize> Cid<S> {
     /// Create a new CIDv0.
-    pub fn new_v0(hash: Multihash<S>) -> Result<Self> {
+    pub const fn new_v0(hash: Multihash<S>) -> Result<Self> {
         if hash.code() != SHA2_256 {
             return Err(Error::InvalidCidV0Multihash);
         }
@@ -89,7 +89,7 @@ impl<const S: usize> Cid<S> {
     }
 
     /// Create a new CIDv1.
-    pub fn new_v1(codec: u64, hash: Multihash<S>) -> Self {
+    pub const fn new_v1(codec: u64, hash: Multihash<S>) -> Self {
         Self {
             version: Version::V1,
             codec,
@@ -98,7 +98,7 @@ impl<const S: usize> Cid<S> {
     }
 
     /// Create a new CID.
-    pub fn new(version: Version, codec: u64, hash: Multihash<S>) -> Result<Self> {
+    pub const fn new(version: Version, codec: u64, hash: Multihash<S>) -> Result<Self> {
         match version {
             Version::V0 => {
                 if codec != DAG_PB {
@@ -111,17 +111,17 @@ impl<const S: usize> Cid<S> {
     }
 
     /// Returns the cid version.
-    pub fn version(&self) -> Version {
+    pub const fn version(&self) -> Version {
         self.version
     }
 
     /// Returns the cid codec.
-    pub fn codec(&self) -> u64 {
+    pub const fn codec(&self) -> u64 {
         self.codec
     }
 
     /// Returns the cid multihash.
-    pub fn hash(&self) -> &Multihash<S> {
+    pub const fn hash(&self) -> &Multihash<S> {
         &self.hash
     }
 
