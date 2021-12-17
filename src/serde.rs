@@ -60,7 +60,6 @@ impl<'de> de::Visitor<'de> for CidVisitor {
     where
         E: de::Error,
     {
-        println!("vmx: visit bytes: value: {:?}", value);
         Cid::try_from(value)
             .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
     }
