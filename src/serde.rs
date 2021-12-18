@@ -23,27 +23,24 @@ impl ser::Serialize for Cid {
     }
 }
 
-/// Visitor to deserialize a CID that is wrapped in a new type struct named as defined at
-/// [`CID_SERDE_NEWTYPE_STRUCT_NAME`].
-pub struct CidVisitor;
+/// Visitor to deserialize a CID.
+struct CidVisitor;
 
 impl<'de> de::Visitor<'de> for CidVisitor {
     type Value = Cid;
 
     fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "a valid CID in bytes, wrapped in a new struct")
+        write!(fmt, "a valid CID in bytes")
     }
 
-    /// Define `visit_newtype_struct` so that we have an entry-point from the seserializer to pass
-    /// in a custom deserializer just for CIDs.
-    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        deserializer.deserialize_bytes(self)
-    }
+    // NOTE: we intentionally _don't_ implement `visit_newtype_struct` as that's the method serde
+    // deserializers will call when they encounter `deserialize_newtype_struct` and don't have
+    // special handling for the specific newtype. This is an easy way to, e.g., avoid decoding JSON
+    // strings as Cids.
+    //
+    // Unfortunately, there's no good way to stop it on the encoding side.
 
-    /// Some Serde data formats interpret a byte stream as a sequence of bytes (e.g. `serde_json`).
+    // Some Serde data formats interpret a byte stream as a sequence of bytes (e.g. `serde_json`).
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
     where
         A: de::SeqAccess<'de>,
@@ -85,7 +82,7 @@ mod tests {
         let cid =
             Cid::try_from("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
         let bytes = serde_json::to_string(&cid).unwrap();
-        let cid2 = serde_json::from_str(&bytes).unwrap();
-        assert_eq!(cid, cid2);
+        serde_json::from_str::<Cid>(&bytes)
+            .expect_err("should have failed to decode a JSON byte sequence as a CID");
     }
 }
