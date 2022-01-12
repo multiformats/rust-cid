@@ -10,18 +10,50 @@ use serde::{de, ser};
 
 use crate::Cid;
 
-/// The newtype struct name that is used by Serde internally.
-pub const CID_SERDE_NEWTYPE_STRUCT_NAME: &str = "$__serde__newtype__struct__for__cid";
+/// An identifier that is used internally by Serde implementations that support [`Cid`]s.
+pub const CID_SERDE_PRIVATE_IDENTIFIER: &str = "$__private__serde__identifier__for__cid";
 
+/// Serialize a CID into the Serde data model as enum.
+///
+/// Custom types are not supported by Serde, hence we map a CID into an enum that can be identified
+/// as a CID by implementations that support CIDs. The corresponding Rust type would be:
+///
+/// ```
+/// enum $__private__serde__identifier__for__cid {
+///     $__private__serde__identifier__for__cid(serde_bytes::BytesBuf)
+/// }
+/// ```
 impl ser::Serialize for Cid {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
         let value = serde_bytes::ByteBuf::from(self.to_bytes());
-        s.serialize_newtype_struct(CID_SERDE_NEWTYPE_STRUCT_NAME, &value)
+        serializer.serialize_newtype_struct(CID_SERDE_PRIVATE_IDENTIFIER, &value)
+        //serializer.serialize_newtype_variant(CID_SERDE_PRIVATE_IDENTIFIER, 0, CID_SERDE_PRIVATE_IDENTIFIER, &value)
     }
 }
+
+
+struct InternalVisitor;
+
+impl<'de> de::Visitor<'de> for InternalVisitor {
+    type Value = Cid;
+
+    fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "a valid CID in bytes")
+    }
+
+    fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        println!("vmx: rust cid: serde: de: internal visitor: bytes");
+        Cid::try_from(value)
+            .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
+    }
+}
+
 
 /// Visitor to deserialize a CID that is wrapped in a new type struct named as defined at
 /// [`CID_SERDE_NEWTYPE_STRUCT_NAME`].
@@ -31,46 +63,59 @@ impl<'de> de::Visitor<'de> for CidVisitor {
     type Value = Cid;
 
     fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "a valid CID in bytes, wrapped in a new struct")
+        write!(fmt, "a valid CID in bytes, wrapped in a newtype struct")
     }
 
     /// Define `visit_newtype_struct` so that we have an entry-point from the seserializer to pass
     /// in a custom deserializer just for CIDs.
     fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
-        D: de::Deserializer<'de>,
+      D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_bytes(self)
+      //deserializer.deserialize_bytes(self)
+      deserializer.deserialize_bytes(InternalVisitor)
     }
 
-    /// Some Serde data formats interpret a byte stream as a sequence of bytes (e.g. `serde_json`).
-    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: de::SeqAccess<'de>,
-    {
-        let mut bytes = Vec::new();
-        while let Some(byte) = seq.next_element()? {
-            bytes.push(byte);
-        }
-        Cid::try_from(bytes)
-            .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
-    }
-
-    fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Cid::try_from(value)
-            .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
-    }
+    ///// Some Serde data formats interpret a byte stream as a sequence of bytes (e.g. `serde_json`).
+    //fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    //where
+    //  A: de::SeqAccess<'de>,
+    //{
+    //  let mut bytes = Vec::new();
+    //  while let Some(byte) = seq.next_element()? {
+    //      bytes.push(byte);
+    //  }
+    //  Cid::try_from(bytes)
+    //      .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
+    //}
+    //
+    //fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
+    //where
+    //  E: de::Error,
+    //{
+    //    println!("vmx: rust cid: serde: de: visitor: bytes");
+    //  Cid::try_from(value)
+    //      .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
+    //}
 }
 
+/// Deserialize a CID from our custom Serde data model enum serialization
+///
+/// Deserialize a CID that was serialized as an enum that can be identified as a CID. Its
+/// corresponding Rust type would be:
+///
+/// ```
+/// enum $__private__serde__identifier__for__cid {
+///     $__private__serde__identifier__for__cid(serde_bytes::BytesBuf)
+/// }
+/// ```
 impl<'de> de::Deserialize<'de> for Cid {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
     {
-        deserializer.deserialize_newtype_struct(CID_SERDE_NEWTYPE_STRUCT_NAME, CidVisitor)
+        println!("vmx: rust cid: deserialize");
+        deserializer.deserialize_newtype_struct(CID_SERDE_PRIVATE_IDENTIFIER, CidVisitor)
     }
 }
 

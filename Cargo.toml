@@ -14,7 +14,7 @@ pre-release-commit-message = "Release {{version}} 🎉🎉"
 no-dev-version = true
 
 [features]
-default = ["std", "multihash/default"]
+default = ["std", "multihash/default", "serde-codec"]
 std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std"]
 alloc = ["multibase", "multihash/alloc"]
 arb = ["quickcheck", "rand", "multihash/arb"]
