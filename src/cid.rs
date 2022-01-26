@@ -64,8 +64,6 @@ const SHA2_256: u64 = 0x12;
 #[derive(Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Decode))]
 #[cfg_attr(feature = "scale-codec", derive(parity_scale_codec::Encode))]
-#[cfg_attr(feature = "serde-codec", derive(serde::Deserialize))]
-#[cfg_attr(feature = "serde-codec", derive(serde::Serialize))]
 pub struct Cid<const S: usize> {
     /// The version of CID.
     version: Version,
@@ -363,17 +361,6 @@ mod tests {
         let cid = Cid::<64>::default();
         let bytes = cid.encode();
         let cid2 = Cid::decode(&mut &bytes[..]).unwrap();
-        assert_eq!(cid, cid2);
-    }
-
-    #[test]
-    #[cfg(feature = "serde-codec")]
-    fn test_cid_serde() {
-        use super::Cid;
-
-        let cid = Cid::<64>::default();
-        let bytes = serde_json::to_string(&cid).unwrap();
-        let cid2 = serde_json::from_str(&bytes).unwrap();
         assert_eq!(cid, cid2);
     }
 

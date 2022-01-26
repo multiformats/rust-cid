@@ -150,7 +150,7 @@ fn method_can_take_differently_sized_cids() {
     #[derive(Clone, Copy, Debug, Eq, PartialEq, Multihash)]
     #[mh(alloc_size = 128)]
     enum Code128 {
-        #[mh(code = 0x12, hasher = multihash::Sha2_256, digest = multihash::Sha2Digest<32>)]
+        #[mh(code = 0x12, hasher = multihash::Sha2_256)]
         Sha2_256,
     }
 
