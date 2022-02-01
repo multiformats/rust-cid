@@ -1,13 +1,13 @@
 use std::convert::TryFrom;
 
-use multihash::{Code, Multihash, MultihashDigest};
+use multihash::{Code, MultihashDigest, MultihashGeneric};
 use quickcheck::{Arbitrary, Gen};
 use rand::{
     distributions::{weighted::WeightedIndex, Distribution},
     Rng,
 };
 
-use crate::{Cid, Version};
+use crate::{CidGeneric, Version};
 
 impl Arbitrary for Version {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
@@ -16,13 +16,15 @@ impl Arbitrary for Version {
     }
 }
 
-impl Arbitrary for Cid {
+impl<const S: usize> Arbitrary for CidGeneric<S> {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let version: Version = Arbitrary::arbitrary(g);
-        if version == Version::V0 {
+        if S >= 32 && <Version as Arbitrary>::arbitrary(g) == Version::V0 {
             let data: Vec<u8> = Arbitrary::arbitrary(g);
-            let hash = Code::Sha2_256.digest(&data);
-            Cid::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
+            let hash = Code::Sha2_256
+                .digest(&data)
+                .resize()
+                .expect("digest too large");
+            CidGeneric::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
         } else {
             // In real world lower IPLD Codec codes more likely to happen, hence distribute them
             // with bias towards smaller values.
@@ -40,8 +42,8 @@ impl Arbitrary for Cid {
                 _ => unreachable!(),
             };
 
-            let hash: Multihash = Arbitrary::arbitrary(g);
-            Cid::new_v1(codec, hash)
+            let hash: MultihashGeneric<S> = Arbitrary::arbitrary(g);
+            CidGeneric::new_v1(codec, hash)
         }
     }
 }

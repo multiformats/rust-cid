@@ -15,20 +15,24 @@ no-dev-version = true
 
 [features]
 default = ["std", "multihash/default"]
-std = ["multibase", "multihash/std", "unsigned-varint/std"]
+std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std"]
+alloc = ["multibase", "multihash/alloc"]
 arb = ["quickcheck", "rand", "multihash/arb"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
-serde-codec = ["serde", "multihash/serde-codec"]
+serde-codec = ["serde", "multihash/serde-codec", "serde_bytes"]
 
 [dependencies]
-multihash = { version = "0.14.0", default-features = false }
+multihash = { version = "0.16.0", default-features = false }
 unsigned-varint = { version = "0.7.0", default-features = false }
 
-multibase = { version = "0.9.1", optional = true }
+multibase = { version = "0.9.1", optional = true, default-features = false }
 parity-scale-codec = { version = "2.1.1", default-features = false, features = ["derive"], optional = true }
 quickcheck = { version = "0.9.2", optional = true }
 rand = { version = "0.7.3", optional = true }
 serde = { version = "1.0.116", optional = true }
+serde_bytes = { version = "0.11.5", optional = true }
+
+core2 = { version = "0.4", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 serde_json = "1.0.59"
