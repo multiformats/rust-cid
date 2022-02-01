@@ -9,10 +9,6 @@ license = "MIT"
 readme = "README.md"
 edition = "2018"
 
-[package.metadata.release]
-pre-release-commit-message = "Release {{version}} 🎉🎉"
-no-dev-version = true
-
 [features]
 default = ["std", "multihash/default"]
 std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std"]
