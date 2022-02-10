@@ -46,7 +46,6 @@ impl<'de> de::Visitor<'de> for BytesToCidVisitor {
     where
         E: de::Error,
     {
-        println!("vmx: rust cid: serde: de: internal visitor: bytes");
         Cid::try_from(value)
             .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
     }
