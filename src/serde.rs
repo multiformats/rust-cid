@@ -3,8 +3,11 @@
 //! CIDs cannot directly be represented in any of the native Serde Data model types. In order to
 //! work around that limitation. a newtype struct is introduced, that is used as a marker for Serde
 //! (de)serialization.
-use std::convert::TryFrom;
-use std::fmt;
+extern crate alloc;
+
+use alloc::{format, vec::Vec};
+use core::convert::TryFrom;
+use core::fmt;
 
 use serde::{de, ser};
 use serde_bytes::ByteBuf;
