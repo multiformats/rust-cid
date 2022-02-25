@@ -9,7 +9,10 @@ use alloc::{format, vec::Vec};
 use core::convert::TryFrom;
 use core::fmt;
 
-use serde::{de, ser};
+use serde::{
+    de::{self, VariantAccess},
+    ser::{self, SerializeTupleVariant},
+};
 use serde_bytes::ByteBuf;
 
 use crate::CidGeneric;
@@ -19,11 +22,14 @@ pub const CID_SERDE_PRIVATE_IDENTIFIER: &str = "$__private__serde__identifier__f
 
 /// Serialize a CID into the Serde data model as enum.
 ///
-/// Custom types are not supported by Serde, hence we map a CID into an enum that can be identified
-/// as a CID by implementations that support CIDs. The corresponding Rust type would be:
+/// Custom types are not supported by Serde, hence we map a CID into an enum tuple variant that can
+/// be identified as a CID by implementations that support CIDs. The corresponding Rust type would
+/// be:
 ///
 /// ```text
-/// struct $__private__serde__identifier__for__cid(serde_bytes::BytesBuf);
+/// enum $__private__serde__identifier__for__cid {
+///     $__private__serde__identifier__for__cid(serde_bytes::BytesBuf),
+/// }
 /// ```
 impl<const SIZE: usize> ser::Serialize for CidGeneric<SIZE> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -31,7 +37,14 @@ impl<const SIZE: usize> ser::Serialize for CidGeneric<SIZE> {
         S: ser::Serializer,
     {
         let value = ByteBuf::from(self.to_bytes());
-        serializer.serialize_newtype_struct(CID_SERDE_PRIVATE_IDENTIFIER, &value)
+        let mut variant = serializer.serialize_tuple_variant(
+            CID_SERDE_PRIVATE_IDENTIFIER,
+            0,
+            CID_SERDE_PRIVATE_IDENTIFIER,
+            1,
+        )?;
+        variant.serialize_field(&value)?;
+        variant.end()
     }
 }
 
@@ -69,11 +82,13 @@ impl<'de, const SIZE: usize> de::Visitor<'de> for BytesToCidVisitor<SIZE> {
 
 /// Deserialize a CID into a newtype struct.
 ///
-/// Deserialize a CID that was serialized as a newtype struct, so that can be identified as a CID.
-/// Its corresponding Rust type would be:
+/// Deserialize a CID that was serialized as an enum tuple variant, so that can be identified as
+/// a CID. Its corresponding Rust type would be:
 ///
 /// ```text
-/// struct $__private__serde__identifier__for__cid(serde_bytes::BytesBuf);
+/// enum $__private__serde__identifier__for__cid {
+///     $__private__serde__identifier__for__cid(serde_bytes::BytesBuf),
+/// }
 /// ```
 impl<'de, const SIZE: usize> de::Deserialize<'de> for CidGeneric<SIZE> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -91,18 +106,34 @@ impl<'de, const SIZE: usize> de::Deserialize<'de> for CidGeneric<SIZE> {
             type Value = CidGeneric<SIZE>;
 
             fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-                write!(fmt, "a valid CID in bytes, wrapped in an newtype struct")
+                write!(
+                    fmt,
+                    "a valid CID in bytes, wrapped in an enum tuple variant"
+                )
             }
 
-            fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
             where
-                D: de::Deserializer<'de>,
+                A: de::EnumAccess<'de>,
             {
-                deserializer.deserialize_bytes(BytesToCidVisitor)
+                match data.variant() {
+                    // Make sure that we only deserialize a CID when we clearly intended to.
+                    Ok((CID_SERDE_PRIVATE_IDENTIFIER, value)) => {
+                        // It's not really a tuple, we use the `tuple_variant` call in order to be
+                        // able to pass in a custom visitor.
+                        let cid = value.tuple_variant(1, BytesToCidVisitor)?;
+                        Ok(cid)
+                    },
+                    _ => Err(de::Error::custom("invalid type: enum, expected a valid CID in bytes, wrapped in an enum tuple variant"))
+                }
             }
         }
 
-        deserializer.deserialize_newtype_struct(CID_SERDE_PRIVATE_IDENTIFIER, MainEntryVisitor)
+        deserializer.deserialize_enum(
+            CID_SERDE_PRIVATE_IDENTIFIER,
+            &[CID_SERDE_PRIVATE_IDENTIFIER],
+            MainEntryVisitor,
+        )
     }
 }
 
