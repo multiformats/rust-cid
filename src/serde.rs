@@ -12,7 +12,7 @@ use core::fmt;
 use serde::{de, ser};
 use serde_bytes::ByteBuf;
 
-use crate::Cid;
+use crate::CidGeneric;
 
 /// An identifier that is used internally by Serde implementations that support [`Cid`]s.
 pub const CID_SERDE_PRIVATE_IDENTIFIER: &str = "$__private__serde__identifier__for__cid";
@@ -25,7 +25,7 @@ pub const CID_SERDE_PRIVATE_IDENTIFIER: &str = "$__private__serde__identifier__f
 /// ```text
 /// struct $__private__serde__identifier__for__cid(serde_bytes::BytesBuf);
 /// ```
-impl ser::Serialize for Cid {
+impl<const SIZE: usize> ser::Serialize for CidGeneric<SIZE> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
@@ -36,10 +36,10 @@ impl ser::Serialize for Cid {
 }
 
 /// Visitor to transform bytes into a CID.
-pub struct BytesToCidVisitor;
+pub struct BytesToCidVisitor<const SIZE: usize = 64>;
 
-impl<'de> de::Visitor<'de> for BytesToCidVisitor {
-    type Value = Cid;
+impl<'de, const SIZE: usize> de::Visitor<'de> for BytesToCidVisitor<SIZE> {
+    type Value = CidGeneric<SIZE>;
 
     fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "a valid CID in bytes")
@@ -49,7 +49,7 @@ impl<'de> de::Visitor<'de> for BytesToCidVisitor {
     where
         E: de::Error,
     {
-        Cid::try_from(value)
+        CidGeneric::<SIZE>::try_from(value)
             .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
     }
 
@@ -62,7 +62,7 @@ impl<'de> de::Visitor<'de> for BytesToCidVisitor {
         while let Some(byte) = seq.next_element()? {
             bytes.push(byte);
         }
-        Cid::try_from(bytes)
+        CidGeneric::<SIZE>::try_from(bytes)
             .map_err(|err| de::Error::custom(format!("Failed to deserialize CID: {}", err)))
     }
 }
@@ -75,7 +75,7 @@ impl<'de> de::Visitor<'de> for BytesToCidVisitor {
 /// ```text
 /// struct $__private__serde__identifier__for__cid(serde_bytes::BytesBuf);
 /// ```
-impl<'de> de::Deserialize<'de> for Cid {
+impl<'de, const SIZE: usize> de::Deserialize<'de> for CidGeneric<SIZE> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -85,10 +85,10 @@ impl<'de> de::Deserialize<'de> for Cid {
         /// This visitor has only a single entry point to deserialize CIDs, it's
         /// `visit_new_type_struct()`. This ensures that it isn't accidentally used to decode CIDs
         /// to bytes.
-        struct MainEntryVisitor;
+        struct MainEntryVisitor<const SIZE: usize>;
 
-        impl<'de> de::Visitor<'de> for MainEntryVisitor {
-            type Value = Cid;
+        impl<'de, const SIZE: usize> de::Visitor<'de> for MainEntryVisitor<SIZE> {
+            type Value = CidGeneric<SIZE>;
 
             fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
                 write!(fmt, "a valid CID in bytes, wrapped in an newtype struct")
@@ -110,12 +110,14 @@ impl<'de> de::Deserialize<'de> for Cid {
 mod tests {
     use std::convert::TryFrom;
 
-    use super::Cid;
+    use crate::CidGeneric;
 
     #[test]
     fn test_cid_serde() {
-        let cid =
-            Cid::try_from("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
+        let cid = CidGeneric::<70>::try_from(
+            "bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy",
+        )
+        .unwrap();
         let bytes = serde_json::to_string(&cid).unwrap();
         let cid2 = serde_json::from_str(&bytes).unwrap();
         assert_eq!(cid, cid2);
