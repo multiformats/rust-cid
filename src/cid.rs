@@ -7,6 +7,7 @@
 //! import the `Cid` type from this module.
 use core::convert::TryFrom;
 
+use multibase::{StackBase, StackVec, StackString};
 #[cfg(feature = "alloc")]
 use multibase::{encode as base_encode, Base};
 
@@ -182,6 +183,26 @@ impl<const S: usize> Cid<S> {
         multibase::encode(Base::Base32Lower, self.to_bytes().as_slice())
     }
 
+    fn to_stack_string_v0<const STR: usize>(&self) -> StackString<STR> { 
+        let mut vec = StackVec::<u8, STR>::default();
+        {
+            let buf: &mut [u8] = &mut vec;
+            // unwraps because it assumes const was written to be generic over base + CID and thus should be correctly sized
+            self.hash.write(buf).unwrap();
+        }
+        StackBase::<0, STR>::Base58BtcS.encode(vec).unwrap()
+    }
+
+    fn to_stack_string_v1<const STR: usize>(&self) -> StackString<STR> { 
+        let mut vec = StackVec::<u8, STR>::default();
+        {
+            let buf: &mut [u8] = &mut vec;
+            // unwraps because it assumes const was written to be generic over base + CID and thus should be correctly sized
+            self.write_bytes_v1(buf).unwrap();
+        }
+        StackBase::<0, STR>::Base32Lower.encode(vec).unwrap()
+    }
+
     /// Convert CID into a multibase encoded string
     ///
     /// # Example
@@ -221,6 +242,55 @@ impl<const S: usize> Default for Cid<S> {
         }
     }
 }
+
+#[cfg(not(feature = "alloc"))]
+/// takes a numerator of a fraction (magic number!)
+/// and the input size to calculate the expected output size
+/// 
+/// adds the buffer sizes of varint
+/// 
+/// 58: 136566
+/// 10: 240824
+const fn encoded_size(size: usize, num: usize) -> usize {
+    let version_size = 1;
+    let codec_size = 4;
+    (size * num / 100000) + 1 + version_size + codec_size
+}
+
+#[cfg(not(feature = "alloc"))]
+macro_rules! stack_display {
+    ($($size:literal,)*) => {
+        $(
+            impl core::fmt::Display for Cid<$size> {
+                fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+            
+                    match self.version {
+                        Version::V0 => write!(f, "{}", self.to_stack_string_v0::<{encoded_size($size, 136566)}>()),
+                        Version::V1 =>  write!(f, "{}", self.to_stack_string_v1::<{encoded_size($size, 240824)}>()),
+                    }
+                }
+            }
+
+            impl core::fmt::Debug for Cid<$size> {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    if f.alternate() {
+                        f.debug_struct("Cid")
+                            .field("version", &self.version())
+                            .field("codec", &self.codec())
+                            .field("hash", self.hash())
+                            .finish()
+                    } else {
+                        write!(f, "Cid({})", self)
+                    }
+                }
+            }
+    
+        )*
+    };
+}
+
+#[cfg(not(feature = "alloc"))]
+stack_display!(32, 64, 128, 256, 512, 1024, 2048,);
 
 // TODO: remove the dependency on alloc by fixing
 // https://github.com/multiformats/rust-multibase/issues/33
