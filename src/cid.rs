@@ -108,7 +108,7 @@ impl<const S: usize> Cid<S> {
         }
     }
 
-    /// Convert a CIDv0 to a CIDv1
+    /// Convert a CIDv0 to a CIDv1. Returns unchanged if already a CIDv1.
     pub fn into_v1(self) -> Result<Self> {
         match self.version {
             Version::V0 => {
