@@ -28,3 +28,6 @@ pub use multihash;
 ///
 /// If you need a CID that is generic over its digest size, use [`CidGeneric`] instead.
 pub type Cid = CidGeneric<64, 0>;
+/// This is a convenient concrete alias for a  CidV2 with an allocated size of
+/// 1024 bits
+pub type CidV2 = CidGeneric<64, 64>;

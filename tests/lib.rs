@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
-use cid::{Cid, CidGeneric, Error, Version};
+use cid::{Cid, CidGeneric, CidV2, Error, Version};
 use multibase::Base;
 use multihash::{derive::Multihash, Code, MultihashDigest};
 
@@ -135,6 +135,21 @@ fn to_string_of_base_v0_error() {
     cid.to_string_of_base(Base::Base16Upper),
     Err(Error::InvalidCidV0Base)
   ));
+}
+
+#[test]
+fn test_cidv2() {
+  let cid = CidV2::new_v2(
+    RAW,
+    Code::Sha2_256.digest(b"data"),
+    RAW,
+    Code::Sha2_256.digest(b"meta"),
+  );
+  assert_eq!(cid.version(), Version::V2);
+  assert_eq!(cid.codec(), RAW);
+  assert_eq!(*cid.hash(), Code::Sha2_256.digest(b"data"));
+  let expected_cid = "bajkreib2n2yhsdzzvsd4stzyk2zn2lc5cehgqelaejq2tkjd2o5shloiw5kreihkhplt4k2qnyafe4rswpwxipagnwudvdrqm33cu4phl243jkq5wy";
+  assert_eq!(cid.to_string_of_base(Base::Base32Lower).unwrap(), expected_cid);
 }
 
 fn a_function_that_takes_a_generic_cid<const S: usize, const M: usize>(
