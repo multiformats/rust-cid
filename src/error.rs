@@ -28,6 +28,8 @@ pub enum Error {
   InvalidCidV0Base,
   /// Varint decode failure.
   VarIntDecodeError,
+  /// Requires CidV2
+  RequiresCidV2,
   /// Io error.
   Io(io::Error),
 }
@@ -47,6 +49,7 @@ impl fmt::Display for Error {
       InvalidCidV0Multihash => "CIDv0 requires a Sha-256 multihash",
       InvalidCidV0Base => "CIDv0 requires a Base58 base",
       VarIntDecodeError => "Failed to decode unsigned varint format",
+      RequiresCidV2 => "CidV2 required for metadata",
       Io(err) => return write!(f, "{}", err),
     };
 

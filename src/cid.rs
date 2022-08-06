@@ -142,6 +142,24 @@ impl<const S: usize, const M: usize> Cid<S, M> {
     }
   }
 
+  /// Returns the cid metadata codec.
+  pub const fn meta_codec(&self) -> Result<u64> {
+    match self {
+      Self::CidV0 { .. } => Err(Error::RequiresCidV2),
+      Self::CidV1 { .. } => Err(Error::RequiresCidV2),
+      Self::CidV2 { meta_codec, .. } => Ok(*meta_codec),
+    }
+  }
+
+  /// Returns the cid metadata hash
+  pub const fn meta_hash(&self) -> Result<Multihash<M>> {
+    match self {
+      Self::CidV0 { .. } => Err(Error::RequiresCidV2),
+      Self::CidV1 { .. } => Err(Error::RequiresCidV2),
+      Self::CidV2 { meta_hash, .. } => Ok(*meta_hash),
+    }
+  }
+
   /// Reads the bytes from a byte stream.
   pub fn read_bytes<R: io::Read>(mut r: R) -> Result<Self> {
     let version = varint_read_u64(&mut r)?;

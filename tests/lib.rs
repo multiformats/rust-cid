@@ -7,6 +7,7 @@ use multibase::Base;
 use multihash::{derive::Multihash, Code, MultihashDigest};
 
 const RAW: u64 = 0x55;
+const IDENTITY: u64 = 0x55;
 const DAG_PB: u64 = 0x70;
 
 #[test]
@@ -150,6 +151,24 @@ fn test_cidv2() {
   assert_eq!(*cid.hash(), Code::Sha2_256.digest(b"data"));
   let expected_cid = "bajkreib2n2yhsdzzvsd4stzyk2zn2lc5cehgqelaejq2tkjd2o5shloiw5kreihkhplt4k2qnyafe4rswpwxipagnwudvdrqm33cu4phl243jkq5wy";
   assert_eq!(cid.to_string_of_base(Base::Base32Lower).unwrap(), expected_cid);
+  assert_eq!(cid, CidV2::from_str(expected_cid).unwrap());
+}
+
+#[test]
+fn test_cidv2_identity() {
+  let cid = CidGeneric::<64, 64>::new_v2(
+    RAW,
+    Code::Sha2_256.digest(b"data"),
+    0x00,
+    Code::Identity.digest(b"meta"),
+  );
+  assert_eq!(cid.version(), Version::V2);
+  assert_eq!(cid.codec(), RAW);
+  assert_eq!(*cid.hash(), Code::Sha2_256.digest(b"data"));
+  let expected_cid =
+    "bajkreib2n2yhsdzzvsd4stzyk2zn2lc5cehgqelaejq2tkjd2o5shloiw4aaabdnmv2gc";
+  assert_eq!(cid.to_string_of_base(Base::Base32Lower).unwrap(), expected_cid);
+  assert_eq!(cid, CidV2::from_str(expected_cid).unwrap());
 }
 
 fn a_function_that_takes_a_generic_cid<const S: usize, const M: usize>(
