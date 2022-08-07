@@ -33,3 +33,4 @@ core2 = { version = "0.4", default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0.59"
+multihash = { version = "0.16.2", default-features = false, features = ["identity"] }
