@@ -127,16 +127,22 @@ impl<const S: usize> Cid<S> {
     pub fn read_bytes<R: io::Read>(mut r: R) -> Result<Self> {
         let version = varint_read_u64(&mut r)?;
         let codec = varint_read_u64(&mut r)?;
+
         // CIDv0 has the fixed `0x12 0x20` prefix
         if [version, codec] == [0x12, 0x20] {
             let mut digest = [0u8; 32];
             r.read_exact(&mut digest)?;
             let mh = Multihash::wrap(version, &digest).expect("Digest is always 32 bytes.");
-            Self::new_v0(mh)
-        } else {
-            let version = Version::try_from(version)?;
-            let mh = Multihash::read(r)?;
-            Self::new(version, codec, mh)
+            return Self::new_v0(mh);
+        }
+
+        let version = Version::try_from(version)?;
+        match version {
+            Version::V0 => Err(Error::InvalidExplicitCidV0),
+            Version::V1 => {
+                let mh = Multihash::read(r)?;
+                Self::new(version, codec, mh)
+            }
         }
     }
 

@@ -139,6 +139,17 @@ fn to_string_of_base_v0_error() {
     ));
 }
 
+#[test]
+fn explicit_v0_is_disallowed() {
+    use std::io::Cursor;
+    assert!(matches!(
+        Cid::read_bytes(Cursor::new([
+            0x00, 0x70, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12
+        ])),
+        Err(Error::InvalidExplicitCidV0)
+    ));
+}
+
 fn a_function_that_takes_a_generic_cid<const S: usize>(cid: &CidGeneric<S>) -> String {
     cid.to_string()
 }
