@@ -30,6 +30,8 @@ pub enum Error {
     VarIntDecodeError,
     /// Io error.
     Io(io::Error),
+    /// Invalid explicit CIDv0.
+    InvalidExplicitCidV0,
 }
 
 #[cfg(feature = "std")]
@@ -48,6 +50,7 @@ impl fmt::Display for Error {
             InvalidCidV0Base => "CIDv0 requires a Base58 base",
             VarIntDecodeError => "Failed to decode unsigned varint format",
             Io(err) => return write!(f, "{}", err),
+            InvalidExplicitCidV0 => "CIDv0 cannot be specified in CIDv1 format",
         };
 
         f.write_str(error)
