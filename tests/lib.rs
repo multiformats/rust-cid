@@ -173,3 +173,19 @@ fn method_can_take_differently_sized_cids() {
         a_function_that_takes_a_generic_cid(&cid_128)
     );
 }
+
+#[test]
+fn test_into_v1() {
+    let cid = Cid::from_str("QmTPcW343HGMdoxarwvHHoPhkbo5GfNYjnZkyW5DBtpvLe").unwrap();
+    let cid_v1 = cid.into_v1().unwrap();
+    assert_eq!(cid_v1.version(), Version::V1);
+    assert_eq!(
+        cid_v1.to_string(),
+        "bafybeiclbsxcvqpfliqcejqz5ghpvw4r7vktjkyk3ruvjvdmam5azct2v4"
+    );
+
+    let cid = Cid::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4").unwrap();
+    let cid_v1 = cid.into_v1().unwrap();
+    assert_eq!(cid_v1.version(), Version::V1);
+    assert_eq!(cid_v1, cid);
+}

@@ -108,6 +108,19 @@ impl<const S: usize> Cid<S> {
         }
     }
 
+    /// Convert a CIDv0 to a CIDv1. Returns unchanged if already a CIDv1.
+    pub fn into_v1(self) -> Result<Self> {
+        match self.version {
+            Version::V0 => {
+                if self.codec != DAG_PB {
+                    return Err(Error::InvalidCidV0Codec);
+                }
+                Ok(Self::new_v1(self.codec, self.hash))
+            }
+            Version::V1 => Ok(self),
+        }
+    }
+
     /// Returns the cid version.
     pub const fn version(&self) -> Version {
         self.version
