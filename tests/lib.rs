@@ -150,6 +150,22 @@ fn explicit_v0_is_disallowed() {
     ));
 }
 
+#[test]
+fn new_v0_accepts_only_32_bytes() {
+    use multihash::Multihash;
+    const SHA2_256: u64 = 0x12;
+
+    for i in 1..64 {
+        if i == 32 {
+            continue;
+        }
+        assert!(matches!(
+            Cid::new_v0(Multihash::wrap(SHA2_256, &vec![7; i]).unwrap()),
+            Err(Error::InvalidCidV0Multihash)
+        ));
+    }
+}
+
 fn a_function_that_takes_a_generic_cid<const S: usize>(cid: &CidGeneric<S>) -> String {
     cid.to_string()
 }
