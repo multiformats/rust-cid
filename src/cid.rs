@@ -76,7 +76,7 @@ pub struct Cid<const S: usize> {
 impl<const S: usize> Cid<S> {
     /// Create a new CIDv0.
     pub const fn new_v0(hash: Multihash<S>) -> Result<Self> {
-        if hash.code() != SHA2_256 {
+        if hash.code() != SHA2_256 || hash.size() != 32 {
             return Err(Error::InvalidCidV0Multihash);
         }
         Ok(Self {
