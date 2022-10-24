@@ -85,22 +85,61 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
     }
 }
 
+impl<'a, const S: usize> arbitrary::Arbitrary<'a> for CidGeneric<S> {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        if S >= 32 && u.ratio(1, 10)? {
+            let mh = MultihashGeneric::wrap(Code::Sha2_256.into(), u.bytes(32)?).unwrap();
+            return Ok(CidGeneric::new_v0(mh).expect("32 bytes is correct for v0"));
+        }
+
+        let mut codec = 0u64;
+        let mut len_choice = u.arbitrary::<u8>()? | 1;
+
+        while len_choice & 1 == 1 {
+            len_choice >>= 1;
+
+            let x = u.arbitrary::<u8>();
+            let next = codec
+                .checked_shl(8)
+                .zip(x.ok())
+                .map(|(next, x)| next.saturating_add(x as u64));
+
+            match next {
+                None => break,
+                Some(next) => codec = next,
+            }
+        }
+
+        Ok(CidGeneric::new_v1(codec, u.arbitrary()?))
+    }
+
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        let v1 = size_hint::and_all(&[
+            <[u8; 2]>::size_hint(depth),
+            (0, Some(8)),
+            <MultihashGeneric<S> as arbitrary::Arbitrary>::size_hint(depth),
+        ]);
+        if S >= 32 {
+            size_hint::and(<u8>::size_hint(depth), size_hint::or((32, Some(32)), v1))
+        } else {
+            v1
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::CidGeneric;
-    use arbitrary::{Unstructured};
+    use arbitrary::{Arbitrary, Unstructured};
     use multihash::MultihashGeneric;
-    use quickcheck::Arbitrary;
-    use quickcheck::Gen;
 
     #[test]
     fn arbitrary() {
-        // let mut u = Unstructured::new(&[
-        //     1, 22, 41, 13, 5, 6, 7, 8, 9, 6, 10, 243, 43, 231, 123, 43, 153, 127, 67, 76, 24, 91,
-        //     23, 32, 32, 23, 65, 98, 193, 108, 3,
-        // ]);
-        let mut u = Gen::new(31);
-        let c = <CidGeneric<16> as Arbitrary>::arbitrary(&mut u);
+        let mut u = Unstructured::new(&[
+            1, 22, 41, 13, 5, 6, 7, 8, 9, 6, 10, 243, 43, 231, 123, 43, 153, 127, 67, 76, 24, 91,
+            23, 32, 32, 23, 65, 98, 193, 108, 3,
+        ]);
+        let c = <CidGeneric<16> as Arbitrary>::arbitrary(&mut u).unwrap();
         let c2 =
             CidGeneric::<16>::new_v1(22, MultihashGeneric::wrap(13, &[6, 7, 8, 9, 6]).unwrap());
         assert_eq!(c.hash(), c2.hash());
