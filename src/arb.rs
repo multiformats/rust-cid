@@ -10,8 +10,8 @@ use rand::{
 };
 
 use arbitrary::{size_hint, Unstructured};
-use rand::SeedableRng;
 use rand::RngCore;
+use rand::SeedableRng;
 
 use crate::{CidGeneric, Version};
 
