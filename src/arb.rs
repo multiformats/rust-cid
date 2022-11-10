@@ -20,7 +20,7 @@ impl quickcheck::Arbitrary for Version {
         // XXX: Adding a bias towards version 1 isn't vital.
         // let mut rng = rand::rngs::SmallRng::seed_from_u64(u64::arbitrary(g));
         // let version = if rng.gen_bool(0.7) { 1 } else { 0 };
-        let version = if bool::arbitrary(g) { 1 } else { 0 };
+        let version = u64::from(if bool::arbitrary(g));
         Version::try_from(version).unwrap()
     }
 }
