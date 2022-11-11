@@ -10,7 +10,6 @@ use rand::{
 };
 
 use arbitrary::{size_hint, Unstructured};
-use rand::RngCore;
 use rand::SeedableRng;
 
 use crate::{CidGeneric, Version};
@@ -49,7 +48,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
                 _ => unreachable!(),
             };
 
-            let hash: MultihashGeneric<S> = arbitrary_multihash(g);
+            let hash: MultihashGeneric<S> = multihash::MultihashGeneric::arbitrary(g);
             CidGeneric::new_v1(codec, hash)
         }
     }
