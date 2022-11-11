@@ -36,7 +36,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
             // with bias towards smaller values.
             let weights = [128, 32, 4, 4, 2, 2, 1, 1];
             let dist = WeightedIndex::new(weights.iter()).unwrap();
-            let mut rng = rand::rngs::SmallRng::seed_from_u64(0);
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(u64::arbitrary(g));
             let codec = match dist.sample(&mut rng) {
                 0 => rng.gen_range(0, u64::pow(2, 7)),
                 1 => rng.gen_range(u64::pow(2, 7), u64::pow(2, 14)),
