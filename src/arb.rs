@@ -10,20 +10,21 @@ use rand::{
 };
 
 use arbitrary::{size_hint, Unstructured};
+use rand::SeedableRng;
 
 use crate::{CidGeneric, Version};
 
 impl quickcheck::Arbitrary for Version {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        let version = if g.gen_bool(0.7) { 1 } else { 0 };
+    fn arbitrary(g: &mut Gen) -> Self {
+        let version = u64::from(bool::arbitrary(g));
         Version::try_from(version).unwrap()
     }
 }
 
 impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        if S >= 32 && <Version as quickcheck::Arbitrary>::arbitrary(g) == Version::V0 {
-            let data: Vec<u8> = quickcheck::Arbitrary::arbitrary(g);
+    fn arbitrary(g: &mut Gen) -> Self {
+        if S >= 32 && Version::arbitrary(g) == Version::V0 {
+            let data: Vec<u8> = Vec::arbitrary(g);
             let hash = Code::Sha2_256
                 .digest(&data)
                 .resize()
@@ -34,15 +35,16 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
             // with bias towards smaller values.
             let weights = [128, 32, 4, 4, 2, 2, 1, 1];
             let dist = WeightedIndex::new(weights.iter()).unwrap();
-            let codec = match dist.sample(g) {
-                0 => g.gen_range(0, u64::pow(2, 7)),
-                1 => g.gen_range(u64::pow(2, 7), u64::pow(2, 14)),
-                2 => g.gen_range(u64::pow(2, 14), u64::pow(2, 21)),
-                3 => g.gen_range(u64::pow(2, 21), u64::pow(2, 28)),
-                4 => g.gen_range(u64::pow(2, 28), u64::pow(2, 35)),
-                5 => g.gen_range(u64::pow(2, 35), u64::pow(2, 42)),
-                6 => g.gen_range(u64::pow(2, 42), u64::pow(2, 49)),
-                7 => g.gen_range(u64::pow(2, 56), u64::pow(2, 63)),
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(u64::arbitrary(g));
+            let codec = match dist.sample(&mut rng) {
+                0 => rng.gen_range(0, u64::pow(2, 7)),
+                1 => rng.gen_range(u64::pow(2, 7), u64::pow(2, 14)),
+                2 => rng.gen_range(u64::pow(2, 14), u64::pow(2, 21)),
+                3 => rng.gen_range(u64::pow(2, 21), u64::pow(2, 28)),
+                4 => rng.gen_range(u64::pow(2, 28), u64::pow(2, 35)),
+                5 => rng.gen_range(u64::pow(2, 35), u64::pow(2, 42)),
+                6 => rng.gen_range(u64::pow(2, 42), u64::pow(2, 49)),
+                7 => rng.gen_range(u64::pow(2, 56), u64::pow(2, 63)),
                 _ => unreachable!(),
             };
 
