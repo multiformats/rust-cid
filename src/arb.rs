@@ -48,7 +48,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
                 _ => unreachable!(),
             };
 
-            let hash: MultihashGeneric<S> = multihash::MultihashGeneric::arbitrary(g);
+            let hash: MultihashGeneric<S> = quickcheck::Arbitrary::arbitrary(g);
             CidGeneric::new_v1(codec, hash)
         }
     }
