@@ -10,9 +10,9 @@ readme = "README.md"
 edition = "2018"
 
 [features]
-default = ["std", "multihash/default"]
+default = [ "multibase"]
 std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std"]
-alloc = ["multibase", "multihash/alloc", "core2/alloc", "serde/alloc"]
+alloc = ["multibase/alloc", "multihash/alloc", "core2/alloc", "serde/alloc"]
 arb = ["quickcheck", "rand", "multihash/arb", "multihash/sha2", "arbitrary"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["alloc", "serde", "multihash/serde-codec", "serde_bytes"]
@@ -21,7 +21,7 @@ serde-codec = ["alloc", "serde", "multihash/serde-codec", "serde_bytes"]
 multihash = { version = "0.17.0", default-features = false }
 unsigned-varint = { version = "0.7.0", default-features = false }
 
-multibase = { version = "0.9.1", optional = true, default-features = false }
+multibase = { version = "0.9.1", optional = true, default-features = false, git = "https://github.com/mriise/rust-multibase", branch = "stack" }
 parity-scale-codec = { version = "3.0.0", default-features = false, features = ["derive"], optional = true }
 quickcheck = { version = "1.0", optional = true }
 rand = { version = "0.8.5", optional = true, features = ["small_rng"]}
