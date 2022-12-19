@@ -159,33 +159,53 @@ impl<const S: usize> Cid<S> {
         }
     }
 
-    fn write_bytes_v1<W: io::Write>(&self, mut w: W) -> Result<()> {
+    fn write_bytes_v1<W: io::Write>(&self, mut w: W) -> Result<usize> {
         let mut version_buf = varint_encode::u64_buffer();
         let version = varint_encode::u64(self.version.into(), &mut version_buf);
 
         let mut codec_buf = varint_encode::u64_buffer();
         let codec = varint_encode::u64(self.codec, &mut codec_buf);
 
+        let mut written = version.len() + codec.len();
+
         w.write_all(version)?;
         w.write_all(codec)?;
-        self.hash.write(&mut w)?;
-        Ok(())
+        written += self.hash.write(&mut w)?;
+
+        Ok(written)
     }
 
-    /// Writes the bytes to a byte stream.
-    pub fn write_bytes<W: io::Write>(&self, w: W) -> Result<()> {
-        match self.version {
+    /// Writes the bytes to a byte stream, returns the number of bytes written.
+    pub fn write_bytes<W: io::Write>(&self, w: W) -> Result<usize> {
+        let written = match self.version {
             Version::V0 => self.hash.write(w)?,
             Version::V1 => self.write_bytes_v1(w)?,
+        };
+        Ok(written)
+    }
+
+    /// Returns the length in bytes needed to encode this cid into bytes.
+    pub fn encoded_len(&self) -> usize {
+        match self.version {
+            Version::V0 => self.hash.encoded_len(),
+            Version::V1 => {
+                let mut version_buf = varint_encode::u64_buffer();
+                let version = varint_encode::u64(self.version.into(), &mut version_buf);
+
+                let mut codec_buf = varint_encode::u64_buffer();
+                let codec = varint_encode::u64(self.codec, &mut codec_buf);
+
+                version.len() + codec.len() + self.hash.encoded_len()
+            }
         }
-        Ok(())
     }
 
     /// Returns the encoded bytes of the `Cid`.
     #[cfg(feature = "alloc")]
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        self.write_bytes(&mut bytes).unwrap();
+        let written = self.write_bytes(&mut bytes).unwrap();
+        debug_assert_eq!(written, bytes.len());
         bytes
     }
 
