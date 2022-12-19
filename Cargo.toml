@@ -7,11 +7,12 @@ authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
 keywords = ["ipld", "ipfs", "cid", "multihash", "multiformats"]
 license = "MIT"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
+rust-version = "1.60"
 
 [features]
 default = ["std", "multihash/default"]
-std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std"]
+std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
 alloc = ["multibase", "multihash/alloc", "core2/alloc", "serde/alloc"]
 arb = ["quickcheck", "rand", "multihash/arb", "multihash/sha2", "arbitrary"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
