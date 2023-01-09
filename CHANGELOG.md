@@ -1,3 +1,11 @@
+# [v0.10.1](https://github.com/multiformats/rust-cid/compare/v0.10.0...v0.10.1) (2023-01-09)
+
+
+### Bug Fixes
+
+* the arb feature needs more multihash features ([#133](https://github.com/multiformats/rust-cid/issues/133)) ([ceca4d9](https://github.com/multiformats/rust-cid/commit/ceca4d93bd90f8ac30987bcc5814f6a655484787))
+
+
 # [v0.10.0](https://github.com/multiformats/rust-cid/compare/v0.9.0...v0.10.0) (2022-12-22)
 
 
