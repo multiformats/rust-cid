@@ -14,7 +14,7 @@ rust-version = "1.60"
 default = ["std", "multihash/default"]
 std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
 alloc = ["multibase", "multihash/alloc", "core2/alloc", "serde/alloc"]
-arb = ["quickcheck", "rand", "multihash/arb", "multihash/sha2", "arbitrary"]
+arb = ["quickcheck", "rand", "multihash/arb", "multihash/multihash-impl", "multihash/sha2", "arbitrary"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["alloc", "serde", "multihash/serde-codec", "serde_bytes"]
 
