@@ -19,7 +19,7 @@ scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["alloc", "serde", "multihash/serde-codec", "serde_bytes"]
 
 [dependencies]
-multihash = { version = "0.18.0", default-features = false }
+multihash = { version = "0.18.1", default-features = false }
 unsigned-varint = { version = "0.7.0", default-features = false }
 
 multibase = { version = "0.9.1", optional = true, default-features = false }
