@@ -151,7 +151,12 @@ impl<const S: usize> Cid<S> {
 
         let version = Version::try_from(version)?;
         match version {
-            Version::V0 => Err(Error::InvalidExplicitCidV0),
+            Version::V0 => {
+                let mut buffer: Vec<u8> = Vec::new();
+                r.read_to_end(&mut buffer).unwrap();
+
+                Self::try_from(&buffer[1..])
+            }
             Version::V1 => {
                 let mh = Multihash::read(r)?;
                 Self::new(version, codec, mh)
