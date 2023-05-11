@@ -140,6 +140,23 @@ fn to_string_of_base_v0_error() {
 }
 
 #[test]
+fn can_decode_binary_v0_cid() {
+    use std::io::Cursor;
+
+    let expected_cid = "QmZEeJY1YBBdQsyu7H93QXrnjjin55TBw7B3SGkp8fwVsx";
+    let cid = Cid::read_bytes(Cursor::new([
+        0, 1, 113, 18, 32, 161, 230, 156, 160, 24, 32, 72, 189, 105, 55, 21, 161, 41, 2, 236, 199,
+        19, 90, 141, 186, 250, 97, 113, 25, 224, 90, 0, 55, 26, 187, 225, 235,
+    ]))
+    .unwrap();
+
+    assert_eq!(
+        cid.to_string_of_base(Base::Base58Btc).unwrap(),
+        expected_cid
+    );
+}
+
+#[test]
 fn new_v0_accepts_only_32_bytes() {
     use multihash::Multihash;
     const SHA2_256: u64 = 0x12;
