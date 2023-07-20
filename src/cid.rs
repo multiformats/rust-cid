@@ -5,7 +5,7 @@
 //!
 //! As a library author that works with CIDs that should support hashes of anysize, you would
 //! import the `Cid` type from this module.
-use core::convert::TryFrom;
+use core::{convert::TryFrom, fmt};
 
 #[cfg(feature = "alloc")]
 use multibase::{encode as base_encode, Base};
@@ -73,17 +73,72 @@ pub struct Cid<const S: usize> {
     hash: Multihash<S>,
 }
 
+// A const-compatible error for users wishing to create a const CID
+#[derive(Debug)]
+pub enum NewV0Error {
+    /// Code must be [`SHA2_256`] with a 32-byte digest
+    InvalidMultihash,
+    /// Codec must be [`DAG_PB`]
+    InvalidCodec,
+}
+
+impl From<NewV0Error> for Error {
+    fn from(value: NewV0Error) -> Self {
+        match value {
+            NewV0Error::InvalidMultihash => Self::InvalidCidV0Multihash,
+            NewV0Error::InvalidCodec => Self::InvalidCidV0Codec,
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for NewV0Error {}
+
+impl fmt::Display for NewV0Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidCodec => f.write_str("CIDv0 requires a DagPB codec"),
+            Self::InvalidMultihash => f.write_str("CIDv0 requires a Sha-256 multihash"),
+        }
+    }
+}
+
 impl<const S: usize> Cid<S> {
-    /// Create a new CIDv0.
-    pub const fn new_v0(hash: Multihash<S>) -> Result<Self> {
+    /// Create a new CIDv0
+    /// ```
+    /// # use cid::{multihash::Multihash, Cid};
+    ///
+    /// const MULTIHASH: Multihash<64> = /* etc */
+    /// # match Multihash::new(0x12, &[0; 32]) {
+    /// #     Ok(ok) => ok,
+    /// #     Err(_) => panic!(),
+    /// # };
+    ///
+    /// const CID: Cid = match Cid::const_new_v0(MULTIHASH) {
+    ///     Ok(ok) => ok,
+    ///     Err(_) => panic!("fail compilation"),
+    /// };
+    /// ```
+    pub const fn const_new_v0(hash: Multihash<S>) -> std::result::Result<Self, NewV0Error> {
         if hash.code() != SHA2_256 || hash.size() != 32 {
-            return Err(Error::InvalidCidV0Multihash);
+            return Err(NewV0Error::InvalidMultihash);
         }
         Ok(Self {
             version: Version::V0,
             codec: DAG_PB,
             hash,
         })
+    }
+
+    /// Create a new CIDv0.
+    #[doc(hidden)]
+    #[deprecated = "Use Cid::const_new_v0, which allows accessing the inner Cid in const contexts."]
+    pub const fn new_v0(hash: Multihash<S>) -> Result<Self> {
+        match Self::const_new_v0(hash) {
+            Ok(ok) => Ok(ok),
+            Err(NewV0Error::InvalidCodec) => Err(Error::InvalidCidV0Codec),
+            Err(NewV0Error::InvalidMultihash) => Err(Error::InvalidCidV0Multihash),
+        }
     }
 
     /// Create a new CIDv1.
@@ -95,7 +150,35 @@ impl<const S: usize> Cid<S> {
         }
     }
 
+    /// Create a new CID according to `version`
+    /// ```
+    /// # use cid::{multihash::Multihash, Cid, Version};
+    /// const MULTIHASH: Multihash<64> = /* etc */
+    /// # match Multihash::new(0x12, &[0; 32]) {
+    /// #     Ok(ok) => ok,
+    /// #     Err(_) => panic!(),
+    /// # };
+    ///
+    /// const CID: Cid = match Cid::const_new(Version::V1, 0, MULTIHASH) {
+    ///     Ok(ok) => ok,
+    ///     Err(_) => panic!("fail compilation"),
+    /// };
+    /// ```
+    pub const fn const_new(
+        version: Version,
+        codec: u64,
+        hash: Multihash<S>,
+    ) -> std::result::Result<Self, NewV0Error> {
+        match version {
+            Version::V0 if codec == DAG_PB => Self::const_new_v0(hash),
+            Version::V0 => Err(NewV0Error::InvalidCodec),
+            Version::V1 => Ok(Self::new_v1(codec, hash)),
+        }
+    }
+
     /// Create a new CID.
+    #[doc(hidden)]
+    #[deprecated = "Use Cid::const_new, which allows accessing the inner Cid in const contexts."]
     pub const fn new(version: Version, codec: u64, hash: Multihash<S>) -> Result<Self> {
         match version {
             Version::V0 => {
