@@ -11,15 +11,16 @@ edition = "2021"
 rust-version = "1.60"
 
 [features]
-default = ["std", "multihash/default"]
-std = ["multihash/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
+default = ["std", "multihash/default", "multihash-codetable/default"]
+std = ["multihash/std", "multihash-codetable/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
 alloc = ["multibase", "multihash/alloc", "core2/alloc", "serde/alloc"]
-arb = ["quickcheck", "rand", "multihash/arb", "multihash/multihash-impl", "multihash/sha2", "arbitrary"]
+arb = ["quickcheck", "rand", "multihash/arb", "arbitrary"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["alloc", "serde", "multihash/serde-codec", "serde_bytes"]
 
 [dependencies]
-multihash = { version = "0.18.0", default-features = false }
+multihash = { version = "0.19.0", default-features = false }
+multihash-codetable = { version = "0.1.0", default-features = false, features = ["digest", "sha2"] }
 unsigned-varint = { version = "0.7.0", default-features = false }
 
 multibase = { version = "0.9.1", optional = true, default-features = false }
@@ -33,5 +34,5 @@ arbitrary = { version = "1.1.0", optional = true }
 core2 = { version = "0.4", default-features = false }
 
 [dev-dependencies]
+multihash-derive = { version = "0.9.0", default-features = false }
 serde_json = "1.0.59"
-

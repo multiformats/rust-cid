@@ -21,6 +21,7 @@ pub use self::version::Version;
 #[cfg(feature = "alloc")]
 pub use multibase;
 pub use multihash;
+pub use multihash_codetable;
 
 /// A Cid that contains a multihash with an allocated size of 512 bits.
 ///

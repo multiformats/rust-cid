@@ -2,7 +2,8 @@
 
 use std::convert::TryFrom;
 
-use multihash::{Code, MultihashDigest, MultihashGeneric};
+use multihash::Multihash;
+use multihash_codetable::{Code, MultihashDigest};
 use quickcheck::Gen;
 use rand::{
     distributions::{weighted::WeightedIndex, Distribution},
@@ -48,7 +49,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
                 _ => unreachable!(),
             };
 
-            let hash: MultihashGeneric<S> = quickcheck::Arbitrary::arbitrary(g);
+            let hash: Multihash<S> = quickcheck::Arbitrary::arbitrary(g);
             CidGeneric::new_v1(codec, hash)
         }
     }
@@ -57,7 +58,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
 impl<'a, const S: usize> arbitrary::Arbitrary<'a> for CidGeneric<S> {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         if S >= 32 && u.ratio(1, 10)? {
-            let mh = MultihashGeneric::wrap(Code::Sha2_256.into(), u.bytes(32)?).unwrap();
+            let mh = Multihash::wrap(Code::Sha2_256.into(), u.bytes(32)?).unwrap();
             return Ok(CidGeneric::new_v0(mh).expect("32 bytes is correct for v0"));
         }
 
@@ -86,7 +87,7 @@ impl<'a, const S: usize> arbitrary::Arbitrary<'a> for CidGeneric<S> {
         let v1 = size_hint::and_all(&[
             <[u8; 2]>::size_hint(depth),
             (0, Some(8)),
-            <MultihashGeneric<S> as arbitrary::Arbitrary>::size_hint(depth),
+            <Multihash<S> as arbitrary::Arbitrary>::size_hint(depth),
         ]);
         if S >= 32 {
             size_hint::and(<u8>::size_hint(depth), size_hint::or((32, Some(32)), v1))
@@ -100,7 +101,7 @@ impl<'a, const S: usize> arbitrary::Arbitrary<'a> for CidGeneric<S> {
 mod tests {
     use crate::CidGeneric;
     use arbitrary::{Arbitrary, Unstructured};
-    use multihash::MultihashGeneric;
+    use multihash::Multihash;
 
     #[test]
     fn arbitrary() {
@@ -110,7 +111,7 @@ mod tests {
         ]);
         let c = <CidGeneric<16> as Arbitrary>::arbitrary(&mut u).unwrap();
         let c2 =
-            CidGeneric::<16>::new_v1(22, MultihashGeneric::wrap(13, &[6, 7, 8, 9, 6]).unwrap());
+            CidGeneric::<16>::new_v1(22, Multihash::wrap(13, &[6, 7, 8, 9, 6]).unwrap());
         assert_eq!(c.hash(), c2.hash());
         assert_eq!(c.codec(), c2.codec());
         assert_eq!(c, c2)
