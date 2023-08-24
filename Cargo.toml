@@ -11,8 +11,8 @@ edition = "2021"
 rust-version = "1.60"
 
 [features]
-default = ["std", "multihash/default", "multihash-codetable/default"]
-std = ["multihash/std", "multihash-codetable/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
+default = ["std", "multihash/default", "multihash-codetable?/default"]
+std = ["multihash/std", "multihash-codetable?/std", "unsigned-varint/std", "alloc", "multibase/std", "serde/std"]
 alloc = ["multibase", "multihash/alloc", "core2/alloc", "serde/alloc"]
 arb = ["quickcheck", "rand", "multihash/arb", "multihash-codetable", "arbitrary"]
 scale-codec = ["parity-scale-codec", "multihash/scale-codec"]
