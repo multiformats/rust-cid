@@ -4,8 +4,7 @@ use std::str::FromStr;
 
 use cid::{Cid, CidGeneric, Error, Version};
 use multibase::Base;
-use multihash_codetable::{Code, MultihashDigest as MultihashDerive};
-use multihash_derive::MultihashDigest;
+use multihash_codetable::{Code, MultihashDigest};
 
 const RAW: u64 = 0x55;
 const DAG_PB: u64 = 0x70;
@@ -175,7 +174,7 @@ fn a_function_that_takes_a_generic_cid<const S: usize>(cid: &CidGeneric<S>) -> S
 // is using `Cid` instead of `Cid<SomeSize>`. The code will still work with other sizes.
 #[test]
 fn method_can_take_differently_sized_cids() {
-    #[derive(Clone, Copy, Debug, Eq, PartialEq, MultihashDerive)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, MultihashDigest)]
     #[mh(alloc_size = 128)]
     enum Code128 {
         #[mh(code = 0x12, hasher = multihash_codetable::Sha2_256)]
