@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 use cid::{Cid, CidGeneric, Error, Version};
 use multibase::Base;
-use multihash_derive::MultihashDigest;
 use multihash_codetable::{Code, MultihashDigest as MultihashDerive};
+use multihash_derive::MultihashDigest;
 
 const RAW: u64 = 0x55;
 const DAG_PB: u64 = 0x70;

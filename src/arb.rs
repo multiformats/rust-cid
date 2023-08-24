@@ -110,8 +110,7 @@ mod tests {
             23, 32, 32, 23, 65, 98, 193, 108, 3,
         ]);
         let c = <CidGeneric<16> as Arbitrary>::arbitrary(&mut u).unwrap();
-        let c2 =
-            CidGeneric::<16>::new_v1(22, Multihash::wrap(13, &[6, 7, 8, 9, 6]).unwrap());
+        let c2 = CidGeneric::<16>::new_v1(22, Multihash::wrap(13, &[6, 7, 8, 9, 6]).unwrap());
         assert_eq!(c.hash(), c2.hash());
         assert_eq!(c.codec(), c2.codec());
         assert_eq!(c, c2)

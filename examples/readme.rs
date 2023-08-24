@@ -1,5 +1,5 @@
-use multihash_codetable::{Code, MultihashDigest};
 use cid::Cid;
+use multihash_codetable::{Code, MultihashDigest};
 use std::convert::TryFrom;
 
 const RAW: u64 = 0x55;
