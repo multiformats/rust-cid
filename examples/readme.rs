@@ -1,4 +1,4 @@
-use cid::multihash_codetable::{Code, MultihashDigest};
+use multihash_codetable::{Code, MultihashDigest};
 use cid::Cid;
 use std::convert::TryFrom;
 
