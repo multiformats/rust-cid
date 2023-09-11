@@ -10,7 +10,7 @@ use core::convert::TryFrom;
 #[cfg(feature = "alloc")]
 use multibase::{encode as base_encode, Base};
 
-use multihash::MultihashGeneric as Multihash;
+use multihash::Multihash;
 use unsigned_varint::encode as varint_encode;
 
 #[cfg(feature = "alloc")]
@@ -228,7 +228,7 @@ impl<const S: usize> Cid<S> {
     /// ```
     /// use cid::Cid;
     /// use multibase::Base;
-    /// use multihash::{Code, MultihashDigest};
+    /// use multihash_codetable::{Code, MultihashDigest};
     ///
     /// const RAW: u64 = 0x55;
     ///
