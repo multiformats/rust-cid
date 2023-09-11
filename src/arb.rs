@@ -3,7 +3,6 @@
 use std::convert::TryFrom;
 
 use multihash::Multihash;
-use multihash_codetable::{Code, MultihashDigest};
 use quickcheck::Gen;
 use rand::{
     distributions::{weighted::WeightedIndex, Distribution},
@@ -13,6 +12,7 @@ use rand::{
 use arbitrary::{size_hint, Unstructured};
 use rand::SeedableRng;
 
+use crate::cid::SHA2_256;
 use crate::{CidGeneric, Version};
 
 impl quickcheck::Arbitrary for Version {
@@ -25,12 +25,12 @@ impl quickcheck::Arbitrary for Version {
 impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
     fn arbitrary(g: &mut Gen) -> Self {
         if S >= 32 && Version::arbitrary(g) == Version::V0 {
-            let data: Vec<u8> = Vec::arbitrary(g);
-            let hash = Code::Sha2_256
-                .digest(&data)
-                .resize()
-                .expect("digest too large");
-            CidGeneric::new_v0(hash).expect("sha2_256 is a valid hash for cid v0")
+            let data = std::array::from_fn::<_, 32, _>(|_| u8::arbitrary(g));
+
+            CidGeneric::new_v0(
+                Multihash::wrap(SHA2_256, &data).expect("S is guaranteed to be > 32"),
+            )
+            .expect("sha2_256 is a valid hash for cid v0")
         } else {
             // In real world lower IPLD Codec codes more likely to happen, hence distribute them
             // with bias towards smaller values.
@@ -58,7 +58,7 @@ impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
 impl<'a, const S: usize> arbitrary::Arbitrary<'a> for CidGeneric<S> {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         if S >= 32 && u.ratio(1, 10)? {
-            let mh = Multihash::wrap(Code::Sha2_256.into(), u.bytes(32)?).unwrap();
+            let mh = Multihash::wrap(SHA2_256, u.bytes(32)?).unwrap();
             return Ok(CidGeneric::new_v0(mh).expect("32 bytes is correct for v0"));
         }
 

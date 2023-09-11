@@ -56,7 +56,7 @@ use crate::version::Version;
 /// DAG-PB multicodec code
 const DAG_PB: u64 = 0x70;
 /// The SHA_256 multicodec code
-const SHA2_256: u64 = 0x12;
+pub(crate) const SHA2_256: u64 = 0x12;
 
 /// Representation of a CID.
 ///
