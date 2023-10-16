@@ -94,7 +94,8 @@ mod std_tests {
 
     #[test]
     fn test_base32() {
-        let cid = Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
+        let cid =
+            Cid::from_str("bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy").unwrap();
         assert_eq!(cid.version(), Version::V1);
         assert_eq!(cid.codec(), RAW);
         assert_eq!(cid.hash(), &Code::Sha2_256.digest(b"foo"));
@@ -204,7 +205,8 @@ mod std_tests {
             "bafybeiclbsxcvqpfliqcejqz5ghpvw4r7vktjkyk3ruvjvdmam5azct2v4"
         );
 
-        let cid = Cid::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4").unwrap();
+        let cid =
+            Cid::from_str("bafyreibjo4xmgaevkgud7mbifn3dzp4v4lyaui4yvqp3f2bqwtxcjrdqg4").unwrap();
         let cid_v1 = cid.into_v1().unwrap();
         assert_eq!(cid_v1.version(), Version::V1);
         assert_eq!(cid_v1, cid);
