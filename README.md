@@ -63,6 +63,8 @@ You can also run this example from this checkout with `cargo run --example readm
 
 You can run the tests using this command: `cargo test --all-features`
 
+You can run the tests for `no_std` using this command: `cargo test --no-default-features`
+
 ## Maintainers
 
 Captain: [@dignifiedquire](https://github.com/dignifiedquire).

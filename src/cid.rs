@@ -38,7 +38,10 @@ pub(crate) fn varint_read_u64<R: io::Read>(mut r: R) -> Result<u64> {
         if n == 0 {
             return Err(Error::VarIntDecodeError);
         } else if decode::is_last(b[i]) {
-            return Ok(decode::u64(&b[..=i]).unwrap().0);
+            match decode::u64(&b[..=i]) {
+                Ok((value, _)) => return Ok(value),
+                Err(_) => return Err(Error::VarIntDecodeError),
+            }
         }
     }
     Err(Error::VarIntDecodeError)
