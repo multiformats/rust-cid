@@ -222,6 +222,6 @@ mod no_std_tests {
         // This should not panic, but should return an error.
         // bad_cid created during fuzz testing
         let bad_cid = [255, 255, 255, 255, 0, 6, 85, 0];
-        assert_eq!(Cid::read_bytes(&bad_cid[..]).is_ok(), false);
+        assert!(Cid::read_bytes(&bad_cid[..]).is_err());
     }
 }
