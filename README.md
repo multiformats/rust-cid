@@ -25,7 +25,7 @@
 ## Usage
 
 ```rust
-use cid::multihash::{Code, MultihashDigest};
+use multihash_codetable::{Code, MultihashDigest};
 use cid::Cid;
 use std::convert::TryFrom;
 

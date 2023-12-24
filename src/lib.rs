@@ -22,6 +22,11 @@ pub use self::version::Version;
 pub use multibase;
 pub use multihash;
 
+// Doctest the readme!
+#[doc = include_str!("../README.md")]
+#[cfg(all(doctest, feature = "std"))]
+pub struct ReadmeDoctest;
+
 /// A Cid that contains a multihash with an allocated size of 512 bits.
 ///
 /// This is the same digest size the default multihash code table has.
