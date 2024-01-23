@@ -11,7 +11,7 @@ mod version;
 
 #[cfg(any(test, feature = "arb"))]
 mod arb;
-#[cfg(feature = "serde-codec")]
+#[cfg(feature = "serde")]
 pub mod serde;
 
 pub use self::cid::Cid as CidGeneric;
