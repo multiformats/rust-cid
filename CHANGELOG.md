@@ -1,3 +1,11 @@
+# [v0.11.1](https://github.com/multiformats/rust-cid/compare/v0.11.0...v0.11.1) (2024-03-01)
+
+
+### Bug Fixes
+
+* wrong serde-codec feature gate ([#156](https://github.com/multiformats/rust-cid/issues/156)) ([9699963](https://github.com/multiformats/rust-cid/commit/96999637942c4bd4c1d69fa2a8fcfb8c225ff27c))
+
+
 # [v0.11.0](https://github.com/multiformats/rust-cid/compare/v0.10.1...v0.11.0) (2023-11-14)
 
 
