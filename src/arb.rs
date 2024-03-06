@@ -1,7 +1,5 @@
 #![cfg(feature = "arb")]
 
-use std::convert::TryFrom;
-
 use multihash::Multihash;
 use quickcheck::Gen;
 use rand::{
@@ -25,7 +23,7 @@ impl quickcheck::Arbitrary for Version {
 impl<const S: usize> quickcheck::Arbitrary for CidGeneric<S> {
     fn arbitrary(g: &mut Gen) -> Self {
         if S >= 32 && Version::arbitrary(g) == Version::V0 {
-            let data = std::array::from_fn::<_, 32, _>(|_| u8::arbitrary(g));
+            let data = core::array::from_fn::<_, 32, _>(|_| u8::arbitrary(g));
 
             CidGeneric::new_v0(
                 Multihash::wrap(SHA2_256, &data).expect("S is guaranteed to be > 32"),
