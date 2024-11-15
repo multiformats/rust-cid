@@ -91,4 +91,4 @@ jobs:
           cargo tarpaulin --all-features --out Xml
 
       - name: Upload Code Coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
