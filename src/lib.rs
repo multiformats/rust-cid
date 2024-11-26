@@ -6,6 +6,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod cid;
+#[cfg(feature = "compat_0_10")]
+mod compat_0_10;
+#[cfg(feature = "compat_0_9")]
+mod compat_0_9;
 mod error;
 mod version;
 
