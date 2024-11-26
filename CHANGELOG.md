@@ -1,3 +1,7 @@
+# [v0.11.2]
+
+* add `compat_0_9` and `compat_0_10` features under which `TryFrom` trait is implemented for converting `Cid` between versions.
+
 # [v0.11.1](https://github.com/multiformats/rust-cid/compare/v0.11.0...v0.11.1) (2024-03-01)
 
 

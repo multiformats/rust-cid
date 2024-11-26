@@ -1,6 +1,6 @@
 [package]
 name = "cid"
-version = "0.11.1"
+version = "0.11.2"
 description = "CID in rust"
 repository = "https://github.com/multiformats/rust-cid"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
@@ -14,10 +14,12 @@ rust-version = "1.60"
 default = ["std"]
 std = ["alloc", "core2/alloc", "multihash/std", "unsigned-varint/std"]
 alloc = ["dep:multibase", "core2/alloc", "multihash/alloc"]
-arb = ["dep:arbitrary", "dep:quickcheck", "dep:rand", "multihash/arb"]
+arb = ["dep:arbitrary", "dep:quickcheck", "dep:rand", "multihash/arb", "cid_0_9?/arb", "cid_0_10?/arb"]
 scale-codec = ["dep:parity-scale-codec", "multihash/scale-codec"]
 serde-codec = ["serde"] # Deprecated, don't use.
 serde = ["alloc", "dep:serde", "dep:serde_bytes", "multihash/serde"]
+compat_0_9 = ["std", "dep:cid_0_9"]
+compat_0_10 = ["std", "dep:cid_0_10"]
 
 [dependencies]
 multihash = { version = "0.19.0", default-features = false }
@@ -30,6 +32,8 @@ rand = { version = "0.8.5", optional = true, features = ["small_rng"]}
 serde = { version = "1.0.116", default-features = false, optional = true }
 serde_bytes = { version = "0.11.5", optional = true }
 arbitrary = { version = "1.1.0", optional = true }
+cid_0_9 = { package = "cid", version = "0.9", optional = true }
+cid_0_10 = { package = "cid", version = "0.10", optional = true }
 
 core2 = { version = "0.4", default-features = false }
 
@@ -37,3 +41,4 @@ core2 = { version = "0.4", default-features = false }
 multihash-derive = { version = "0.9.0", default-features = false }
 serde_json = { version = "1.0.59", default-features = false, features = ["alloc"]}
 multihash-codetable = { version = "0.1.0", default-features = false, features = ["digest", "sha2"] }
+quickcheck_macros = { version = "1.0" }
