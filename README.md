@@ -54,7 +54,7 @@ Your `Cargo.toml` needs these dependencies:
 
 ```toml
 [dependencies]
-cid = "0.7.0"
+cid = "0.11.1"
 ```
 
 You can also run this example from this checkout with `cargo run --example readme`.
