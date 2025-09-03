@@ -67,14 +67,15 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    container:
+      image: xd009642/tarpaulin:0.32.8
+      options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout Sources
         uses: actions/checkout@v4
 
       - name: Generate Code Coverage
-        run: |
-          cargo install cargo-tarpaulin
-          cargo tarpaulin --all-features --out Xml
+        run: cargo tarpaulin --all-features --out Xml
 
       - name: Upload Code Coverage
         uses: codecov/codecov-action@v5
