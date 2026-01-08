@@ -49,26 +49,47 @@ jobs:
         shell: bash
 
       - name: Build
+        # thumbv6m-none-eabi is a platform that doesn't have any std librarry.
+        # It's often used to make sure that std isn't enabled accidentally.
         run: cargo build --no-default-features --target thumbv6m-none-eabi
         shell: bash
 
-  build-no-std-serde:
+  build-no-std-with-serde:
     name: Build no_std, but with `serde` feature enabled
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Sources
         uses: actions/checkout@v5
 
-      - name: Build
-        # `thumbv6m-none-eabi` can't be used as Serde doesn't compile there.
-        run: cargo build --no-default-features --features serde
+      - name: Install Rust Toolchain
+        run: rustup target add thumbv6m-none-eabi
         shell: bash
+
+      - name: Build
+        # thumbv6m-none-eabi is a platform that doesn't have any std librarry.
+        # It's often used to make sure that std isn't enabled accidentally.
+        run: cargo build --no-default-features --features serde --target thumbv6m-none-eabi
+        shell: bash
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v5
+
+      - name: Extract MSRV from Cargo.toml
+        run: |
+          MSRV=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | .rust_version')
+          echo "MSRV=$MSRV" >> $GITHUB_ENV
+
+      - run: cargo +"$MSRV" build
 
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     container:
-      image: xd009642/tarpaulin:0.32.8
+      image: xd009642/tarpaulin:0.35.0
       options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout Sources
