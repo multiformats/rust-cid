@@ -49,6 +49,8 @@ jobs:
         shell: bash
 
       - name: Build
+        # thumbv6m-none-eabi is a platform that doesn't have any std librarry.
+        # It's often used to make sure that std isn't enabled accidentally.
         run: cargo build --no-default-features --target thumbv6m-none-eabi
         shell: bash
 
@@ -64,6 +66,8 @@ jobs:
         shell: bash
 
       - name: Build
+        # thumbv6m-none-eabi is a platform that doesn't have any std librarry.
+        # It's often used to make sure that std isn't enabled accidentally.
         run: cargo build --no-default-features --features serde --target thumbv6m-none-eabi
         shell: bash
 
