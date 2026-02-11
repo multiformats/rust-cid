@@ -4,7 +4,7 @@ use multihash::Multihash;
 use quickcheck::Gen;
 use rand::{
     distr::{weighted::WeightedIndex, Distribution},
-    Rng,
+    RngExt,
 };
 
 use arbitrary::{size_hint, Unstructured};
