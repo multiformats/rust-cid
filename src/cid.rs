@@ -51,7 +51,7 @@ pub(crate) fn varint_read_u64<R: io::Read>(mut r: R) -> Result<u64> {
 use std::io;
 
 #[cfg(not(feature = "std"))]
-use core2::io;
+use no_std_io2::io;
 
 use crate::error::{Error, Result};
 use crate::version::Version;

@@ -4,7 +4,7 @@ use core::fmt;
 use std::io;
 
 #[cfg(not(feature = "std"))]
-use core2::io;
+use no_std_io2::io;
 
 /// Type alias to use this library's [`Error`] type in a `Result`.
 pub type Result<T> = core::result::Result<T, Error>;
