@@ -1,3 +1,13 @@
+# [v0.11.2](https://github.com/multiformats/rust-cid/compare/v0.11.1...v0.11.2) (2026-04-15)
+
+
+### Bug Fixes
+
+* make arb feature work with no-std ([#160](https://github.com/multiformats/rust-cid/issues/160)) ([dae650c](https://github.com/multiformats/rust-cid/commit/dae650cc5a9778e4320bfe8cefbb214b67a9ad29))
+* remove default features of serde_bytes ([#172](https://github.com/multiformats/rust-cid/issues/172)) ([6a13cb9](https://github.com/multiformats/rust-cid/commit/6a13cb931d3237e5e1f5635a943edfd166e2e78c))
+* replace archived core2 dependency with no_std_io2 ([#185](https://github.com/multiformats/rust-cid/issues/185)) ([54855ba](https://github.com/multiformats/rust-cid/commit/54855bab2cbcecd20ef6b1c59c73d273c9077371)), closes [rust-lang/rust#68315](https://github.com/rust-lang/rust/issues/68315) [multiformats/rust-multihash#407](https://github.com/multiformats/rust-multihash/issues/407) [multiformats/rust-cid#184](https://github.com/multiformats/rust-cid/issues/184)
+
+
 # [v0.11.1](https://github.com/multiformats/rust-cid/compare/v0.11.0...v0.11.1) (2024-03-01)
 
 
