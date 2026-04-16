@@ -54,6 +54,23 @@ jobs:
         run: cargo build --no-default-features --target thumbv6m-none-eabi
         shell: bash
 
+  build-no-std-with-alloc:
+    name: Build no_std, but with `alloc` feature enabled
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v6
+
+      - name: Install Rust Toolchain
+        run: rustup target add thumbv6m-none-eabi
+        shell: bash
+
+      - name: Build
+        # thumbv6m-none-eabi is a platform that doesn't have any std librarry.
+        # It's often used to make sure that std isn't enabled accidentally.
+        run: cargo build --no-default-features --features alloc --target thumbv6m-none-eabi
+        shell: bash
+
   build-no-std-with-serde:
     name: Build no_std, but with `serde` feature enabled
     runs-on: ubuntu-latest
