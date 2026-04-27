@@ -1,3 +1,11 @@
+# [v0.11.3](https://github.com/multiformats/rust-cid/compare/v0.11.2...v0.11.3) (2026-04-27)
+
+
+### Bug Fixes
+
+* remove `no_std_io2` from dep tree ([#187](https://github.com/multiformats/rust-cid/issues/187)) ([8648728](https://github.com/multiformats/rust-cid/commit/864872868adc54e52be761bfe76df6b7efe03d60))
+
+
 # [v0.11.2](https://github.com/multiformats/rust-cid/compare/v0.11.1...v0.11.2) (2026-04-15)
 
 
